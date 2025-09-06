@@ -359,7 +359,7 @@ const Dashboard = () => {
   )
 }
 // DownloadIcon component
-const DownloadIcon = ({ className }) => {
+const DownloadIcon = ({ className }: { className?: string }) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -380,7 +380,7 @@ const DownloadIcon = ({ className }) => {
   )
 }
 // CheckIcon component
-const CheckIcon = ({ className }) => {
+const CheckIcon = ({ className }: { className?: string }) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
