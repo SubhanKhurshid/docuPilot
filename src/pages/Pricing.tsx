@@ -39,13 +39,12 @@ const Pricing = () => {
             <span className="text-[#8dff2d]">Simple, Transparent Pricing</span>
           </div>
           <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            Take control of your finances
+            One plan.
             <br />
-            <span className="text-[#8dff2d]">without breaking the bank</span>
+            <span className="text-[#8dff2d]">Everything included.</span>
           </h1>
           <p className="text-gray-400 max-w-2xl mx-auto">
-            Get all the tools you need to master your money at an affordable
-            price. No hidden fees, no complicated tiers - just one simple plan.
+            Get full access to AI-powered form filling, PDF generation, and document management all for one simple annual fee.
           </p>
         </div>
         {/* Pricing Card */}
@@ -95,9 +94,7 @@ const Pricing = () => {
                 What's included in the $19/year plan?
               </h3>
               <p className="text-gray-400">
-                Everything! Our simple pricing model gives you access to all
-                features, including expense tracking, budgeting tools, financial
-                insights, and our AI assistant.
+                Everything. You’ll get unlimited access to our AI chatbot, automated PDF generation for all required forms, your member dashboard, and email reminders.
               </p>
             </div>
             <div className="bg-[#191919] rounded-xl p-6 border border-[#333333]">
@@ -112,12 +109,18 @@ const Pricing = () => {
             </div>
             <div className="bg-[#191919] rounded-xl p-6 border border-[#333333]">
               <h3 className="text-xl font-semibold mb-2">
-                Is my financial data secure?
+                Is my data secure?
               </h3>
               <p className="text-gray-400">
-                Yes, your security is our top priority. We use bank-level
-                encryption and never store your banking credentials on our
-                servers.
+                Absolutely. We use enterprise-grade encryption to protect your personal information, and your documents are stored securely.
+              </p>
+            </div>
+            <div className="bg-[#191919] rounded-xl p-6 border border-[#333333]">
+              <h3 className="text-xl font-semibold mb-2">
+                Who is this service for?
+              </h3>
+              <p className="text-gray-400">
+                Anyone who needs help completing multiple legal or claims documents — without the hassle of filling out endless forms by hand.
               </p>
             </div>
           </div>
@@ -125,11 +128,11 @@ const Pricing = () => {
         {/* Call to action */}
         <div className="mt-16 text-center">
           <h2 className="text-3xl font-bold mb-4">
-            Ready to transform your financial future?
+            Ready to transform your future?
           </h2>
           <p className="text-gray-400 max-w-2xl mx-auto mb-8">
             Join thousands of users who have already taken control of their
-            finances with Clario.
+            documents with Clario.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link

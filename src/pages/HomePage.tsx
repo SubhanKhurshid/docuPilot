@@ -54,16 +54,15 @@ const HomePage = () => {
         {/* Hero Section */}
         <div className="text-center mb-12">
           <div className="inline-block px-4 py-1 mb-6 rounded-full bg-[#1a1a1a] border border-[#333333]">
-            <span className="text-[#8dff2d]">All-in-One Finance Toolkit</span>
+          <span className="text-[#8dff2d]">All-in-One Legal & Claims Toolkit</span>
           </div>
           <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            Take control of your
+          Simplify the process
             <br />
-            finances — with clarity
+          guided by AI.
           </h1>
           <p className="text-gray-400 max-w-2xl mx-auto mb-8">
-            All your money insights, finally in one place — track income,
-            spending, and reach your goals with ease.
+          Complete your forms, generate documents, and stay on top of deadlines with ease.
           </p>
           <Link to="/signup" className="inline-flex items-center px-6 py-3 rounded-full bg-[#8dff2d] text-black font-medium hover:bg-[#7be525] transition-colors">
             Get Started for Free
