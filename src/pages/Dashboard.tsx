@@ -1,4 +1,3 @@
-import React from 'react'
 import {
   AlertCircleIcon,
   BarChartIcon,
@@ -16,9 +15,10 @@ import {
   UploadIcon,
   UserIcon,
   WalletIcon,
-} from 'lucide-react'
+} from 'lucide-react';
+
 const Dashboard = () => {
-  // Sample data for documents
+  // Sample data for documents - keeping original data
   const documents = [
     {
       id: 1,
@@ -110,8 +110,9 @@ const Dashboard = () => {
       status: 'Pending',
       date: 'Awaiting data',
     },
-  ]
-  // Sample data for presentations
+  ];
+
+  // Sample data for presentations - keeping original data
   const presentations = [
     {
       id: 1,
@@ -137,9 +138,9 @@ const Dashboard = () => {
       size: '2.8 MB',
       date: 'Sep 22, 2023',
     },
-  ]
+  ];
   
-  // Tasks data
+  // Tasks data - keeping original data
   const tasks = [
     {
       id: 1,
@@ -171,22 +172,42 @@ const Dashboard = () => {
       name: 'Schedule quarterly review',
       completed: false,
     },
-  ]
-  // Calculate completion percentage
-  const completedTasks = tasks.filter((task) => task.completed).length
-  const completionPercentage = (completedTasks / tasks.length) * 100
+  ];
+
+  // Calculate completion percentage - keeping original logic
+  const completedTasks = tasks.filter((task) => task.completed).length;
+  const completionPercentage = (completedTasks / tasks.length) * 100;
+
   return (
     <div className="min-h-screen bg-[#111111]">
+      {/* Background elements - subtle, no animation - positioned only within main content area */}
+      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: -1 }}>
+        <div
+          className="absolute inset-0 opacity-[0.01]"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(141, 255, 45, 0.3) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(141, 255, 45, 0.3) 1px, transparent 1px)
+            `,
+            backgroundSize: '100px 100px'
+          }}
+        />
+        {/* Static floating elements */}
+        <div className="absolute top-32 left-20 w-1 h-1 bg-[#8dff2d] rounded-full opacity-20" />
+        <div className="absolute top-64 right-32 w-1 h-1 bg-[#8dff2d] rounded-full opacity-15" />
+        <div className="absolute bottom-64 left-40 w-1 h-1 bg-[#8dff2d] rounded-full opacity-25" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#111111] via-transparent to-[#111111]" />
+      </div>
+
       <div className="flex">
-        
         {/* Main content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 relative">
           <div className="max-w-6xl mx-auto">
-            {/* Header */}
+            {/* Header - keeping original structure */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
               <div>
-                <h1 className="text-3xl font-bold">Dashboard</h1>
-                <p className="text-gray-400">Welcome back, Danielle M.</p>
+                <h1 className="text-3xl font-semibold text-white">Dashboard</h1>
+                <p className="text-gray-300 font-normal">Welcome back, Danielle M.</p>
               </div>
               <div className="mt-4 md:mt-0 flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden">
@@ -198,19 +219,20 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
-            {/* Membership Info */}
-            <div className="mb-8 bg-[#191919] rounded-xl p-6 border border-[#333333]">
+
+            {/* Membership Info - keeping original structure but updated styling */}
+            <div className="mb-8 bg-[#0a0a0a]/90 backdrop-blur-xl rounded-2xl p-6 border border-[#333333]/50">
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="flex-1">
-                  <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
+                  <h2 className="text-xl font-semibold flex items-center gap-2 mb-4 text-white">
                     <UserIcon className="h-5 w-5 text-[#8dff2d]" />
                     Membership Information
                   </h2>
-                  <div className="bg-[#151515] rounded-lg p-6 border border-[#333333]">
+                  <div className="bg-[#111111]/50 rounded-lg p-6 border border-[#333333]">
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <div className="text-sm text-gray-400">Member</div>
-                        <div className="font-medium text-xl">Danielle M.</div>
+                        <div className="font-medium text-xl text-white">Danielle M.</div>
                       </div>
                       <div className="bg-[#8dff2d] text-black px-3 py-1 rounded-full text-sm font-medium">
                         Premium
@@ -222,7 +244,7 @@ const Dashboard = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <ClockIcon className="h-4 w-4 text-[#8dff2d]" />
-                        <span className="text-xl font-semibold">42 days</span>
+                        <span className="text-xl font-semibold text-white">42 days</span>
                       </div>
                     </div>
                     <div className="text-sm text-gray-400">
@@ -231,21 +253,21 @@ const Dashboard = () => {
                     </div>
                   </div>
                 </div>
-                
               </div>
             </div>
-            {/* Main Dashboard Sections */}
+
+            {/* Main Dashboard Sections - keeping original structure */}
             <div className="">
               {/* Left Column - Documents */}
               <div className="lg:col-span-2 space-y-6">
-                {/* Documents Section */}
-                <div className="bg-[#191919] rounded-xl p-6 border border-[#333333]">
+                {/* Documents Section - keeping original structure but updated styling */}
+                <div className="bg-[#0a0a0a]/90 backdrop-blur-xl rounded-2xl p-6 border border-[#333333]/50">
                   <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
+                    <h2 className="text-xl font-semibold flex items-center gap-2 text-white">
                       <FileTextIcon className="h-5 w-5 text-[#8dff2d]" />
                       Documents
                     </h2>
-                    <button className="text-sm text-[#8dff2d] flex items-center gap-1">
+                    <button className="text-sm text-[#8dff2d] flex items-center gap-1 font-medium hover:text-[#7be525] transition-colors">
                       <PlusIcon className="h-4 w-4" />
                       Generate New
                     </button>
@@ -262,16 +284,19 @@ const Dashboard = () => {
                       </thead>
                       <tbody className="divide-y divide-[#333333]">
                         {documents.slice(0, 7).map((doc) => (
-                          <tr key={doc.id} className="text-sm">
+                          <tr key={doc.id} className="text-sm hover:bg-[#111111]/30 transition-colors">
                             <td className="py-3 pr-2">
                               <div className="flex items-center gap-2">
                                 <FileTextIcon className="h-4 w-4 text-[#8dff2d]" />
-                                <span>{doc.name}</span>
+                                <span className="text-white font-normal">{doc.name}</span>
                               </div>
                             </td>
                             <td className="py-3 pr-2">
                               <span
-                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${doc.status === 'Generated' ? 'bg-[#1a3a40] text-[#8dff2d]' : 'bg-[#2a2a2a] text-gray-400'}`}
+                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${doc.status === 'Generated'
+                                  ? 'bg-[#8dff2d]/10 text-[#8dff2d] border border-[#8dff2d]/20'
+                                  : 'bg-[#333333]/50 text-gray-400 border border-[#333333]'
+                                  }`}
                               >
                                 {doc.status === 'Generated' ? (
                                   <CheckCircleIcon className="h-3 w-3 mr-1" />
@@ -281,12 +306,15 @@ const Dashboard = () => {
                                 {doc.status}
                               </span>
                             </td>
-                            <td className="py-3 pr-2 text-gray-400">
+                            <td className="py-3 pr-2 text-gray-400 font-normal">
                               {doc.date}
                             </td>
                             <td className="py-3">
                               <button
-                                className={`text-xs px-3 py-1 rounded-lg ${doc.status === 'Generated' ? 'bg-[#252525] text-white hover:bg-[#333333]' : 'bg-[#1a1a1a] text-gray-500 cursor-not-allowed'}`}
+                                className={`text-xs px-3 py-1 rounded-lg font-medium transition-colors ${doc.status === 'Generated'
+                                  ? 'bg-[#333333] text-white hover:bg-[#444444] border border-[#444444]'
+                                  : 'bg-[#1a1a1a] text-gray-500 cursor-not-allowed border border-[#333333]'
+                                  }`}
                               >
                                 {doc.status === 'Generated'
                                   ? 'Download'
@@ -299,19 +327,20 @@ const Dashboard = () => {
                     </table>
                   </div>
                   <div className="mt-4 text-center">
-                    <button className="text-sm text-[#8dff2d]">
+                    <button className="text-sm text-[#8dff2d] font-medium hover:text-[#7be525] transition-colors">
                       View all 15 documents
                     </button>
                   </div>
                 </div>
-                {/* PowerPoint Section */}
-                <div className="bg-[#191919] rounded-xl p-6 border border-[#333333]">
+
+                {/* PowerPoint Section - keeping original structure but updated styling */}
+                <div className="bg-[#0a0a0a]/90 backdrop-blur-xl rounded-2xl p-6 border border-[#333333]/50">
                   <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
+                    <h2 className="text-xl font-semibold flex items-center gap-2 text-white">
                       <FileTextIcon className="h-5 w-5 text-[#8dff2d]" />
                       Presentations
                     </h2>
-                    <button className="text-sm text-[#8dff2d] flex items-center gap-1">
+                    <button className="text-sm text-[#8dff2d] flex items-center gap-1 font-medium hover:text-[#7be525] transition-colors">
                       <UploadIcon className="h-4 w-4" />
                       Upload New
                     </button>
@@ -320,20 +349,20 @@ const Dashboard = () => {
                     {presentations.map((presentation) => (
                       <div
                         key={presentation.id}
-                        className="flex items-center p-4 bg-[#151515] rounded-lg border border-[#333333] hover:border-[#8dff2d] transition-colors"
+                        className="flex items-center p-4 bg-[#111111]/50 rounded-lg border border-[#333333] hover:border-[#8dff2d] transition-colors"
                       >
-                        <div className="w-10 h-10 rounded bg-[#252525] flex items-center justify-center mr-3">
+                        <div className="w-10 h-10 rounded bg-[#333333] flex items-center justify-center mr-3">
                           <FileTextIcon className="h-5 w-5 text-[#8dff2d]" />
                         </div>
                         <div className="flex-1">
-                          <div className="font-medium">
+                          <div className="font-medium text-white">
                             {presentation.name}.pptx
                           </div>
                           <div className="text-xs text-gray-400">
                             {presentation.size} • Added {presentation.date}
                           </div>
                         </div>
-                        <button className="ml-2 p-2 rounded-full hover:bg-[#252525]">
+                        <button className="ml-2 p-2 rounded-full hover:bg-[#333333] transition-colors">
                           <DownloadIcon className="h-4 w-4 text-[#8dff2d]" />
                         </button>
                       </div>
@@ -341,24 +370,24 @@ const Dashboard = () => {
                   </div>
                   <div className="mt-6 border border-dashed border-[#333333] rounded-lg p-6 text-center">
                     <UploadIcon className="h-8 w-8 text-gray-500 mx-auto mb-2" />
-                    <p className="text-gray-400 mb-2">
+                    <p className="text-gray-400 mb-2 font-normal">
                       Drag and drop files here or
                     </p>
-                    <button className="px-4 py-2 bg-[#252525] text-[#8dff2d] rounded-lg hover:bg-[#333333] transition-colors">
+                    <button className="px-4 py-2 bg-[#333333] text-[#8dff2d] rounded-lg hover:bg-[#444444] transition-colors font-medium">
                       Browse Files
                     </button>
                   </div>
                 </div>
               </div>
-             
             </div>
           </div>
         </main>
       </div>
     </div>
-  )
-}
-// DownloadIcon component
+  );
+};
+
+// DownloadIcon component - keeping original
 const DownloadIcon = ({ className }: { className?: string }) => {
   return (
     <svg
@@ -377,9 +406,10 @@ const DownloadIcon = ({ className }: { className?: string }) => {
       <polyline points="7 10 12 15 17 10" />
       <line x1="12" y1="15" x2="12" y2="3" />
     </svg>
-  )
-}
-// CheckIcon component
+  );
+};
+
+// CheckIcon component - keeping original
 const CheckIcon = ({ className }: { className?: string }) => {
   return (
     <svg
@@ -396,6 +426,7 @@ const CheckIcon = ({ className }: { className?: string }) => {
     >
       <polyline points="20 6 9 17 4 12" />
     </svg>
-  )
-}
-export default Dashboard
+  );
+};
+
+export default Dashboard;

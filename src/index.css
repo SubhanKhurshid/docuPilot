@@ -12,16 +12,16 @@
   .typing-indicator {
     display: flex;
     align-items: center;
+    gap: 2px;
   }
   .typing-indicator span {
-    height: 8px;
-    width: 8px;
-    margin: 0 1px;
+    height: 6px;
+    width: 6px;
     background-color: #8dff2d;
     display: block;
     border-radius: 50%;
     opacity: 0.4;
-    animation: typing 1s infinite;
+    animation: typing 1.4s infinite ease-in-out;
   }
   .typing-indicator span:nth-child(1) {
     animation-delay: 0s;
@@ -33,17 +33,50 @@
     animation-delay: 0.4s;
   }
   @keyframes typing {
-    0% {
+    0%, 80%, 100% {
       opacity: 0.4;
       transform: scale(1);
     }
-    50% {
+    40% {
       opacity: 1;
-      transform: scale(1.2);
+      transform: scale(1.3);
     }
-    100% {
-      opacity: 0.4;
-      transform: scale(1);
-    }
+  }
+
+  /* Smooth scrolling for the entire page */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #111111;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #333333;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #8dff2d;
+  }
+
+  /* Consistent font weights */
+  .font-light {
+    font-weight: 300;
+  }
+  .font-normal {
+    font-weight: 400;
+  }
+  .font-medium {
+    font-weight: 500;
+  }
+  .font-semibold {
+    font-weight: 600;
+  }
+  .font-bold {
+    font-weight: 700;
   }
 }
