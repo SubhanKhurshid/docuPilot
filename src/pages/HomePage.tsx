@@ -16,7 +16,8 @@ import {
   UsersIcon
 } from 'lucide-react';
 import ChatBubble from '../components/ChatBubble';
-
+import { CircularProgress } from '../components/CircularProgress';
+import SettlementCalculator from '../components/SettlementCalculator';
 const HomePage = () => {
   const [messages, setMessages] = useState([{
     id: 1,
@@ -351,6 +352,23 @@ const HomePage = () => {
             </motion.div>
           </div>
         </section>
+
+        {/* Circular Progress Section */}
+        <section className="py-24 border-t border-[#222222] bg-gradient-to-b from-[#111111] to-[#0a0a0a]">
+          <div className="container mx-auto px-6">
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+            >
+              <CircularProgress />
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Settlement Calculator Section */}
+        <SettlementCalculator />
 
         {/* Value Proposition */}
         <section className="py-24 border-t border-[#222222]">
