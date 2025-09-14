@@ -53,27 +53,27 @@ export function CircularProgress() {
         ))}
       </div>
 
-      <div className="relative flex flex-col items-center justify-center min-h-[700px]">
+      <div className="relative flex flex-col items-center justify-center min-h-[500px] md:min-h-[700px] px-4">
         {/* Title section */}
-        <div className="text-center mb-12">
-          <p className="text-[#8dff2d] text-sm mb-2">Personal Injury Process</p>
-          <h1 className="text-white text-4xl font-bold mb-2">Legal Process</h1>
+        <div className="text-center mb-6 md:mb-12">
+          <p className="text-[#8dff2d] text-xs md:text-sm mb-2">Personal Injury Process</p>
+          <h1 className="text-white text-2xl md:text-4xl font-bold mb-2">Legal Process</h1>
           
         </div>
 
-        <div className="relative w-[500px] h-[500px] mb-8">
+        <div className="relative w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] md:w-[450px] md:h-[450px] lg:w-[500px] lg:h-[500px] mb-4 md:mb-8">
           {/* Inner rotating dots */}
           <div className="absolute inset-0">
             {[...Array(12)].map((_, i) => {
               const angle = (i * 360) / 12 - 90
-              const x = 50 + 40 * Math.cos((angle * Math.PI) / 180)
-              const y = 50 + 40 * Math.sin((angle * Math.PI) / 180)
+              const x = 50 + 35 * Math.cos((angle * Math.PI) / 180) // Reduced from 40 to 35
+              const y = 50 + 35 * Math.sin((angle * Math.PI) / 180) // Reduced from 40 to 35
               const isHighlighted = i === innerDotsStep
 
               return (
                 <div
                   key={i}
-                  className="absolute w-1.5 h-1.5 -translate-x-1/2 -translate-y-1/2 transition-all duration-500"
+                  className="absolute w-1 h-1 md:w-1.5 md:h-1.5 -translate-x-1/2 -translate-y-1/2 transition-all duration-500"
                   style={{
                     left: `${x}%`,
                     top: `${y}%`,
@@ -84,7 +84,7 @@ export function CircularProgress() {
                       isHighlighted ? "bg-[#8dff2d] scale-125 shadow-lg shadow-[#8dff2d]/50" : "bg-white/40"
                     }`}
                     style={{
-                      boxShadow: isHighlighted ? "0 0 8px rgba(141, 255, 45, 0.8)" : undefined,
+                      boxShadow: isHighlighted ? "0 0 4px rgba(141, 255, 45, 0.8)" : undefined,
                     }}
                   />
                 </div>
@@ -131,7 +131,7 @@ export function CircularProgress() {
             return (
               <div
                 key={step.id}
-                className="absolute w-4 h-4 -translate-x-1/2 -translate-y-1/2 transition-all duration-500"
+                className="absolute w-3 h-3 md:w-4 md:h-4 -translate-x-1/2 -translate-y-1/2 transition-all duration-500"
                 style={{
                   left: `${x}%`,
                   top: `${y}%`,
@@ -142,10 +142,10 @@ export function CircularProgress() {
                     isActive
                       ? "bg-[#8dff2d] border-[#7be525] shadow-lg shadow-[#8dff2d]/50"
                       : "bg-white/10 border-white/30"
-                  } ${isCurrent ? "scale-150 animate-pulse bg-[#8dff2d] border-[#7be525] shadow-xl shadow-[#8dff2d]/70" : ""}`}
+                    } ${isCurrent ? "scale-125 md:scale-150 animate-pulse bg-[#8dff2d] border-[#7be525] shadow-xl shadow-[#8dff2d]/70" : ""}`}
                   style={{
                     boxShadow: isCurrent
-                      ? "0 0 20px rgba(141, 255, 45, 0.9), 0 0 40px rgba(141, 255, 45, 0.5)"
+                      ? "0 0 15px rgba(141, 255, 45, 0.9), 0 0 30px rgba(141, 255, 45, 0.5)"
                       : undefined,
                   }}
                 />
@@ -155,7 +155,7 @@ export function CircularProgress() {
 
           {/* Current step indicator */}
           <div
-            className="absolute w-6 h-6 -translate-x-1/2 -translate-y-1/2 transition-all duration-1000 ease-in-out"
+            className="absolute w-4 h-4 md:w-6 md:h-6 -translate-x-1/2 -translate-y-1/2 transition-all duration-1000 ease-in-out"
             style={{
               left: `${50 + 45 * Math.cos((((currentStep * 360) / steps.length - 90) * Math.PI) / 180)}%`,
               top: `${50 + 45 * Math.sin((((currentStep * 360) / steps.length - 90) * Math.PI) / 180)}%`,
@@ -164,18 +164,18 @@ export function CircularProgress() {
             <div
               className="w-full h-full rounded-full bg-[#8dff2d] border-2 border-white shadow-lg animate-pulse"
               style={{
-                boxShadow: "0 0 15px rgba(141, 255, 45, 0.9), 0 0 30px rgba(141, 255, 45, 0.5)",
+                boxShadow: "0 0 10px rgba(141, 255, 45, 0.9), 0 0 20px rgba(141, 255, 45, 0.5)",
               }}
             />
           </div>
 
           {/* Center content */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-12">
-            <div className="text-white/60 text-sm mb-2">
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 md:p-12">
+            <div className="text-white/60 text-xs md:text-sm mb-1 md:mb-2">
               Step {currentStep + 1} of {steps.length}
             </div>
-            <h3 className="text-white text-lg font-semibold mb-2 text-balance">{steps[currentStep].title}</h3>
-            <p className="text-white/80 text-sm text-balance">{steps[currentStep].description}</p>
+            <h3 className="text-white text-sm md:text-lg font-semibold mb-1 md:mb-2 text-balance leading-tight">{steps[currentStep].title}</h3>
+            <p className="text-white/80 text-xs md:text-sm text-balance leading-tight">{steps[currentStep].description}</p>
           </div>
         </div>
 
