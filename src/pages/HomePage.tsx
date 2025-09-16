@@ -13,7 +13,9 @@ import {
   SendIcon,
   SparklesIcon,
   TrendingUpIcon,
-  UsersIcon
+  UsersIcon,
+  BotIcon,
+  DollarSignIcon
 } from 'lucide-react';
 import ChatBubble from '../components/ChatBubble';
 import { CircularProgress } from '../components/CircularProgress';
@@ -185,7 +187,7 @@ const HomePage = () => {
                         ease: "easeInOut"
                       }}
                     />
-                    <span className="text-sm text-gray-300 font-medium">AI-Powered Legal Solutions</span>
+                    <span className="text-sm text-gray-300 font-medium">AI-Powered Injury Solutions</span>
                     <SparklesIcon className="h-4 w-4 text-[#8dff2d]" />
                   </motion.div>
 
@@ -218,7 +220,7 @@ const HomePage = () => {
                     >
                       <Link
                         to="/signup"
-                        className="group inline-flex items-center px-8 py-4 rounded-full bg-[#8dff2d] text-black font-semibold text-lg hover:bg-[#7be525] transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20"
+                        className="group inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-[#8dff2d] text-black font-semibold text-base sm:text-lg hover:bg-[#7be525] transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20 w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]"
                       >
                         Start Free Assessment
                         <motion.div
@@ -232,7 +234,7 @@ const HomePage = () => {
                     </motion.div>
 
                     <motion.button
-                      className="group inline-flex items-center px-8 py-4 rounded-full border border-[#333333] text-white font-semibold text-lg hover:border-[#8dff2d] hover:bg-[#8dff2d]/5 transition-all duration-300"
+                      className="border-[#8dff2d] group inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full border border-[#333333] text-white font-semibold text-base sm:text-lg hover:border-[#8dff2d] hover:bg-[#8dff2d]/5 transition-all duration-300 w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]"
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
@@ -475,7 +477,7 @@ const HomePage = () => {
             >
               <div className="text-center mb-20">
                 <h2 className="text-4xl md:text-5xl font-semibold mb-6 text-white">How it works</h2>
-                <p className="text-xl text-gray-300 font-normal">Four simple steps to maximize your settlement</p>
+                <p className="text-xl text-gray-300 font-normal"> Unlock the full potential of your accident claim - With AI, you'll know exactly how to maximize your settlement faster and smarter than ever before</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -484,25 +486,25 @@ const HomePage = () => {
                     number: "01",
                     title: "Assessment",
                     description: "AI evaluates your claim value instantly using advanced algorithms",
-                    icon: <BarChart3Icon className="h-8 w-8" />
+                    icon: <img src="/output-onlinepngtools.png" alt="Injured person" className="h-10 w-10"  />
                   },
                   {
                     number: "02",
                     title: "Strategy",
                     description: "Get personalized approach tailored to your specific case",
-                    icon: <FileTextIcon className="h-8 w-8" />
+                    icon: <BotIcon className="h-10 w-10" />
                   },
                   {
                     number: "03",
                     title: "Documents",
-                    description: "Generate professional legal documents with AI assistance",
-                    icon: <FileTextIcon className="h-8 w-8" />
+                    description: "Auto-generate professional documents with AI assistance",
+                    icon: <FileTextIcon className="h-10 w-10" />
                   },
                   {
                     number: "04",
                     title: "Settlement",
                     description: "Track progress and maximize your final outcome",
-                    icon: <TrendingUpIcon className="h-8 w-8" />
+                    icon: <DollarSignIcon className="h-10 w-10" />
                   }
                 ].map((step, index) => (
                   <motion.div
@@ -540,7 +542,7 @@ const HomePage = () => {
 
         {/* Social Proof */}
         <section className="py-24 border-t border-[#222222]">
-          <div className="container mx-auto px-6">
+          <div className="container mx-auto px-6">  
             <motion.div
               className="max-w-5xl mx-auto text-center"
               initial={{ opacity: 0, y: 50 }}
@@ -556,16 +558,17 @@ const HomePage = () => {
                   transition={{ duration: 0.6, delay: 0.2 }}
                   viewport={{ once: true }}
                 >
-                  $2.3M+
+                  $73B
                 </motion.div>
-                <p className="text-gray-300 font-normal text-lg">Total settlements secured for our users</p>
+                <p className="text-gray-300 font-normal text-lg">Personal injury market cap annually in the US</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
                 {[
-                  { value: "98%", label: "Success Rate", icon: <TrendingUpIcon className="h-6 w-6" /> },
-                  { value: "45 Days", label: "Average Settlement Time", icon: <ClockIcon className="h-6 w-6" /> },
-                  { value: "$47K", label: "Average Settlement", icon: <UsersIcon className="h-6 w-6" /> }
+                  { value: "39M", label: "Accidents Per Year", icon: <TrendingUpIcon className="h-6 w-6" /> },
+                  { value: "$73B", label: "Market Cap Annually", icon: <DollarSignIcon className="h-6 w-6" /> },
+                  { value: "$52K", label: "Average Settlement", icon: <BarChart3Icon className="h-6 w-6" /> },
+                  { value: "98%", label: "Our Success Rate", icon: <CheckIcon className="h-6 w-6" /> }
                 ].map((stat, index) => (
                   <motion.div
                     key={index}
@@ -640,7 +643,7 @@ const HomePage = () => {
                 >
                   <Link
                     to="/signup"
-                    className="group inline-flex items-center px-8 py-4 rounded-full bg-[#8dff2d] text-black font-semibold text-lg hover:bg-[#7be525] transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20"
+                    className="group inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-[#8dff2d] text-black font-semibold text-base sm:text-lg hover:bg-[#7be525] transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20 w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]"
                   >
                     Start Free Trial
                     <motion.div
@@ -658,7 +661,7 @@ const HomePage = () => {
                 >
                   <Link
                     to="/pricing"
-                    className="inline-flex items-center px-8 py-4 rounded-full border border-[#333333] text-white font-semibold text-lg hover:border-[#8dff2d] hover:bg-[#8dff2d]/5 transition-all duration-300"
+                    className="border-[#8dff2d] inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full border border-[#333333] text-white font-semibold text-base sm:text-lg hover:border-[#8dff2d] hover:bg-[#8dff2d]/5 transition-all duration-300 w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]"
                   >
                     View Pricing
                   </Link>

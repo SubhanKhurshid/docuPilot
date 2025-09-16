@@ -3,16 +3,16 @@
 import { useState, useEffect } from "react"
 
 const steps = [
-  { id: 1, title: "Seek Immediate Medical Treatment", description: "Get proper medical care and documentation" },
-  { id: 2, title: "Gather and Organize Evidence", description: "Collect photos, reports, and witness information" },
-  { id: 3, title: "Calculate Your Damages", description: "Document all financial losses and expenses" },
-  { id: 4, title: "Establish Liability", description: "Determine fault and responsibility" },
-  { id: 5, title: "Draft a Demand Letter", description: "Create formal compensation request" },
-  { id: 6, title: "Send and Track Your Demand", description: "Submit and monitor your claim" },
-  { id: 7, title: "Prepare for Negotiation", description: "Ready your case for discussions" },
-  { id: 8, title: "Respond to Insurance Adjusters", description: "Handle insurance company communications" },
-  { id: 9, title: "Evaluate Counteroffers and Settlement Tools", description: "Review and assess settlement options" },
-  { id: 10, title: "Finalize Settlement", description: "Complete the legal resolution process" },
+  { id: 1, title: "AI Intake with Automated Chatbot", description: "The AI chatbot collects accident and injury details, creating a case file and sending confirmation emails to the claimant." },
+  { id: 2, title: "AI-Driven Medical Treatment Guidance", description: "AI recommends to seek appropriate medical providers and to follow-up with all appointments." },
+  { id: 3, title: "Case Strength Analysis & AI Insights", description: "AI evaluates the case's strength based on injury details and generates insights." },
+  { id: 4, title: "AI-Generated Document & Bill Management", description: "AI tracks medical bills and records, automatically requesting missing documents and organizing them for easy access." },
+  { id: 5, title: "Automated Treatment Timeline Visualization", description: "AI creates and updates a visual timeline of medical treatments, keeping the claimant informed on their recovery progress." },
+  { id: 6, title: "AI Detection of Treatment Gaps", description: "AI identifies any gaps in treatment, flags issues, and alerts the claimant to schedule additional care if needed." },
+  { id: 7, title: "Optimized Demand Timing with AI Analysis", description: "AI analyzes the treatment timeline and recovery progress to determine the best time to make a demand for settlement." },
+  { id: 8, title: "Auto-Generated Demand Letters & Requests", description: "AI automatically drafts and sends demand letters, settlement requests, and follow-up emails at the optimal time." },
+  { id: 9, title: "AI-Powered Negotiation Brief & Offer Comparisons", description: "AI compares settlement offers to historical data and generates negotiation briefs, sending counteroffers or acceptance emails." },
+  { id: 10, title: "Final Settlement Optimization & Case Closure", description: "AI generates all closing documents, tracks final payments, and ensures settlement is processed, sending closure emails to all parties." },
 ]
 
 export function CircularProgress() {
@@ -56,9 +56,9 @@ export function CircularProgress() {
       <div className="relative flex flex-col items-center justify-center min-h-[500px] md:min-h-[700px] px-4">
         {/* Title section */}
         <div className="text-center mb-6 md:mb-12">
-          <p className="text-[#8dff2d] text-xs md:text-sm mb-2">Personal Injury Process</p>
-          <h1 className="text-white text-2xl md:text-4xl font-bold mb-2">Legal Process</h1>
           
+          <h1 className="text-white text-2xl md:text-4xl font-bold mb-2"> AI-Powered Accident Claims Success: Streamline Your Case, Maximize Your Settlement</h1>
+          <h2>10-Step AI-Powered Claim Tracker</h2>
         </div>
 
         <div className="relative w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] md:w-[450px] md:h-[450px] lg:w-[500px] lg:h-[500px] mb-4 md:mb-8">
