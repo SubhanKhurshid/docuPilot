@@ -19,14 +19,7 @@ const Footer = () => {
             <p className="text-gray-400 mb-6 max-w-md">
               Your case, your settlement—AI powered. Maximize your personal injury settlements with our comprehensive AI-driven tools and expert guidance.
             </p>
-            <div className="text-gray-300 text-sm">
-              <p><strong>Dr. Jared Rose DC</strong></p>
-              <p>Chiropractic Physician</p>
-              <p>Sobe Health Center</p>
-              <p>16585 NW 2 Avenue, Suite #300</p>
-              <p>Miami, FL 33169</p>
-              <p>(305) 834-7900</p>
-            </div>
+           
           </div>
 
           {/* Quick Links */}

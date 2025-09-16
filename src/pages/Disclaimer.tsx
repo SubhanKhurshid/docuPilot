@@ -250,38 +250,7 @@ const Disclaimer = () => {
               </div>
             </motion.div>
 
-            {/* Contact Information */}
-            <motion.div 
-              className="bg-[#0a0a0a]/90 backdrop-blur-xl border border-[#333333]/50 rounded-2xl p-8 mb-8"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              viewport={{ once: true }}
-            >
-              <div className="text-center">
-                <div className="inline-flex items-center gap-2 mb-6">
-                  <PhoneIcon className="h-6 w-6 text-[#8dff2d]" />
-                  <h3 className="text-xl font-semibold text-white">Professional Medical Consultation</h3>
-                </div>
-                <div className="text-gray-200 font-normal space-y-1">
-                  <p className="text-gray-400 mb-4">For medical evaluation and documentation of your injuries:</p>
-                  <p><strong className="text-white font-semibold">Dr. Jared Rose DC</strong></p>
-                  <p>Chiropractic Physician</p>
-                  <p>Sobe Health Center</p>
-                  <p>16585 NW 2 Avenue, Suite #300</p>
-                  <p>Miami, FL 33169</p>
-                  <motion.p 
-                    className="text-[#8dff2d] font-medium text-lg mt-4"
-                    whileHover={{ scale: 1.05 }}
-                  >
-                    (305) 834-7900
-                  </motion.p>
-                  <p className="text-sm text-gray-400 mt-4">
-                    Professional medical evaluation can strengthen your personal injury claim
-                  </p>
-                </div>
-              </div>
-            </motion.div>
+           
 
             {/* Footer */}
             <motion.div 
