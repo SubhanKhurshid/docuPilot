@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const Navbar = () => {
@@ -25,6 +25,9 @@ const Navbar = () => {
         <div className="hidden md:flex items-center gap-8">
           <Link to="/" className="text-gray-300 hover:text-white transition-colors">
             Home
+          </Link>
+          <Link to="/chat" className="text-gray-300 hover:text-white transition-colors">
+            AI Chat
           </Link>
           <Link to="/dashboard" className="text-gray-300 hover:text-white transition-colors">
             Dashboard
@@ -67,6 +70,13 @@ const Navbar = () => {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Home
+            </Link>
+            <Link
+              to="/chat"
+              className="block text-gray-300 hover:text-white hover:bg-[#222222] transition-colors py-3 px-4 rounded-lg text-lg"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              AI Chat
             </Link>
             <Link
               to="/dashboard"

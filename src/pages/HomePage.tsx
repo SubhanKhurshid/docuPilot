@@ -1,61 +1,22 @@
-import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowRightIcon,
   CheckIcon,
   ShieldCheckIcon,
-  ClockIcon,
   FileTextIcon,
   BarChart3Icon,
   StarIcon,
   PlayIcon,
-  SendIcon,
   SparklesIcon,
   TrendingUpIcon,
-  UsersIcon,
   BotIcon,
   DollarSignIcon
 } from 'lucide-react';
-import ChatBubble from '../components/ChatBubble';
 import { CircularProgress } from '../components/CircularProgress';
 import SettlementCalculator from '../components/SettlementCalculator';
+
 const HomePage = () => {
-  const [messages, setMessages] = useState([{
-    id: 1,
-    text: "Hello! I'm DocuPilot AI. I can help you maximize your personal injury settlement.",
-    isUser: false
-  }, {
-    id: 2,
-    text: 'Would you like to learn how our AI-powered platform works?',
-    isUser: false
-  }]);
-  const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputValue.trim()) return;
-
-    // Add user message
-    setMessages([...messages, {
-      id: Date.now(),
-      text: inputValue,
-      isUser: true
-    }]);
-    setInputValue('');
-    setIsTyping(true);
-
-    // Simulate AI response
-    setTimeout(() => {
-      setMessages(prev => [...prev, {
-        id: Date.now() + 1,
-        text: "Great! I can help you assess your claim value, generate legal documents, and guide you through the entire process. Let's get started with a free claim evaluation!",
-        isUser: false
-      }]);
-      setIsTyping(false);
-    }, 1500);
-  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -73,8 +34,7 @@ const HomePage = () => {
       opacity: 1,
       y: 0,
       transition: {
-        duration: 0.6,
-        ease: [0.25, 0.46, 0.45, 0.94]
+        duration: 0.6
       }
     }
   };
@@ -301,52 +261,28 @@ const HomePage = () => {
                         </div>
                       </div>
 
-                      <div className="h-80 overflow-y-auto p-6 flex flex-col gap-4 bg-gradient-to-b from-[#0a0a0a]/50 to-[#111111]/50">
-                        {messages.map(message => (
-                          <motion.div
-                            key={message.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3 }}
+                      <div className="h-80 flex flex-col items-center justify-center p-6 bg-gradient-to-b from-[#0a0a0a]/50 to-[#111111]/50">
+                        <motion.div
+                          className="text-center"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.5 }}
+                        >
+                          <BotIcon className="h-16 w-16 text-[#8dff2d] mx-auto mb-4" />
+                          <h3 className="text-xl font-semibold text-white mb-2">Start Your AI-Powered Case Assessment</h3>
+                          <p className="text-gray-400 mb-6 max-w-md">
+                            Get personalized guidance for your personal injury case with our advanced AI assistant.
+                          </p>
+                          <Link
+                            to="/chat"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-[#8dff2d] text-black rounded-full font-semibold hover:bg-[#7be525] transition-colors"
                           >
-                            <ChatBubble message={message.text} isUser={message.isUser} />
-                          </motion.div>
-                        ))}
-                        {isTyping && (
-                          <motion.div
-                            className="flex items-center gap-2 text-gray-400 ml-2"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                          >
-                            <div className="typing-indicator">
-                              <span></span>
-                              <span></span>
-                              <span></span>
-                            </div>
-                            <span className="text-sm font-medium">DocuPilot is analyzing...</span>
-                          </motion.div>
-                        )}
+                            <BotIcon className="h-5 w-5" />
+                            Start Chat with AI
+                            <ArrowRightIcon className="h-4 w-4" />
+                          </Link>
+                        </motion.div>
                       </div>
-
-                      <form onSubmit={handleSendMessage} className="p-6 border-t border-[#333333]/50 bg-[#0a0a0a]/80">
-                        <div className="flex gap-3">
-                          <input
-                            type="text"
-                            value={inputValue}
-                            onChange={e => setInputValue(e.target.value)}
-                            placeholder="Ask about your injury claim..."
-                            className="flex-1 bg-[#222222]/80 border border-[#333333] rounded-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#8dff2d] focus:border-transparent text-white placeholder-gray-400 font-medium"
-                          />
-                          <motion.button
-                            type="submit"
-                            className="p-3 rounded-full bg-[#8dff2d] text-black hover:bg-[#7be525] transition-colors shadow-lg"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            <SendIcon className="h-5 w-5" />
-                          </motion.button>
-                        </div>
-                      </form>
                     </div>
                   </div>
                 </motion.div>
