@@ -1,0 +1,210 @@
+/* Custom Clerk Theme Overrides */
+
+/* Ensure proper dark theme for all Clerk components */
+.cl-rootBox {
+  --clerk-color-primary: #8dff2d;
+  --clerk-color-primary-50: rgba(141, 255, 45, 0.05);
+  --clerk-color-primary-100: rgba(141, 255, 45, 0.1);
+  --clerk-color-primary-200: rgba(141, 255, 45, 0.2);
+  --clerk-color-primary-300: rgba(141, 255, 45, 0.3);
+  --clerk-color-primary-400: rgba(141, 255, 45, 0.4);
+  --clerk-color-primary-500: #8dff2d;
+  --clerk-color-primary-600: #7be525;
+  
+  --clerk-color-neutral-50: #fafafa;
+  --clerk-color-neutral-100: #f5f5f5;
+  --clerk-color-neutral-200: #e5e5e5;
+  --clerk-color-neutral-300: #d4d4d4;
+  --clerk-color-neutral-400: #a3a3a3;
+  --clerk-color-neutral-500: #737373;
+  --clerk-color-neutral-600: #525252;
+  --clerk-color-neutral-700: #404040;
+  --clerk-color-neutral-800: #262626;
+  --clerk-color-neutral-900: #171717;
+  --clerk-color-neutral-950: #0a0a0a;
+  
+  --clerk-color-background: #191919;
+  --clerk-color-text: #ffffff;
+  --clerk-color-text-on-primary-background: #000000;
+  --clerk-color-text-secondary: #9ca3af;
+  --clerk-color-input-background: #252525;
+  --clerk-color-input-text: #ffffff;
+  --clerk-border-radius: 12px;
+  --clerk-border-radius-buttons: 25px;
+  --clerk-font-family: "Inter", system-ui, sans-serif;
+}
+
+/* Card styling */
+.cl-card {
+  background-color: #191919 !important;
+  border: 1px solid #333333 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Header styling */
+.cl-headerTitle {
+  color: #ffffff !important;
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  margin-bottom: 8px !important;
+}
+
+.cl-headerSubtitle {
+  color: #9ca3af !important;
+  font-size: 16px !important;
+}
+
+/* Social buttons */
+.cl-socialButtonsBlockButton {
+  background-color: #252525 !important;
+  border: 1px solid #333333 !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+.cl-socialButtonsBlockButton:hover {
+  background-color: #333333 !important;
+}
+
+/* Form fields */
+.cl-formFieldLabel {
+  color: #d1d5db !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+.cl-formFieldInput {
+  background-color: #252525 !important;
+  border: 1px solid #333333 !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+}
+
+.cl-formFieldInput::placeholder {
+  color: #6b7280 !important;
+}
+
+.cl-formFieldInput:focus {
+  border-color: #8dff2d !important;
+  box-shadow: 0 0 0 2px rgba(141, 255, 45, 0.2) !important;
+}
+
+/* Primary button */
+.cl-formButtonPrimary {
+  background-color: #8dff2d !important;
+  color: #000000 !important;
+  border-radius: 25px !important;
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  padding: 12px 24px !important;
+}
+
+.cl-formButtonPrimary:hover {
+  background-color: #7be525 !important;
+}
+
+/* Footer links */
+.cl-footerActionLink {
+  color: #8dff2d !important;
+  font-weight: 500 !important;
+}
+
+.cl-footerActionLink:hover {
+  color: #7be525 !important;
+}
+
+.cl-footerActionText {
+  color: #9ca3af !important;
+}
+
+/* Dividers */
+.cl-dividerLine {
+  background-color: #333333 !important;
+}
+
+.cl-dividerText {
+  color: #9ca3af !important;
+  font-size: 14px !important;
+}
+
+/* Success/Error/Hint text */
+.cl-formFieldSuccessText {
+  color: #8dff2d !important;
+  font-size: 14px !important;
+}
+
+.cl-formFieldErrorText {
+  color: #ef4444 !important;
+  font-size: 14px !important;
+}
+
+.cl-formFieldHintText {
+  color: #6b7280 !important;
+  font-size: 14px !important;
+}
+
+/* Verification status */
+.cl-verificationLinkStatusBox {
+  background-color: #252525 !important;
+  border: 1px solid #333333 !important;
+  border-radius: 8px !important;
+}
+
+.cl-verificationLinkStatusText {
+  color: #d1d5db !important;
+}
+
+/* Password input show/hide button */
+.cl-formFieldInputShowPasswordButton {
+  color: #9ca3af !important;
+}
+
+.cl-formFieldInputShowPasswordButton:hover {
+  color: #ffffff !important;
+}
+
+/* Loading spinner */
+.cl-spinner {
+  color: #8dff2d !important;
+}
+
+/* Alerts */
+.cl-alertClerkError {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+  color: #ef4444 !important;
+  border-radius: 8px !important;
+}
+
+/* Close/Cross button */
+.cl-modalCloseButton {
+  color: #8dff2d !important;
+}
+
+.cl-modalCloseButton:hover {
+  color: #7be525 !important;
+  background-color: rgba(141, 255, 45, 0.1) !important;
+}
+
+.cl-modalCloseButton svg {
+  color: #8dff2d !important;
+}
+
+.cl-modalCloseButton:hover svg {
+  color: #7be525 !important;
+}
+
+/* Alternative close button selectors */
+.cl-card .cl-internal-icon,
+.cl-headerActionButton {
+  color: #8dff2d !important;
+}
+
+.cl-card .cl-internal-icon:hover,
+.cl-headerActionButton:hover {
+  color: #7be525 !important;
+  background-color: rgba(141, 255, 45, 0.1) !important;
+}
