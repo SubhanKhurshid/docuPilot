@@ -1,188 +1,114 @@
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
-  AlertCircleIcon,
-  BarChartIcon,
-  BellIcon,
-  CalendarIcon,
-  CheckCircleIcon,
-  CheckSquareIcon,
-  ClockIcon,
   FileTextIcon,
-  HistoryIcon,
   PlusIcon,
-  RefreshCwIcon,
-  SettingsIcon,
   TrendingUpIcon,
-  UploadIcon,
-  UserIcon,
   WalletIcon,
-  CreditCardIcon,
+CreditCardIcon,
+  DollarSignIcon,
+  MessageCircleIcon,
+  BotIcon,
+  EyeIcon,
 } from 'lucide-react';
+import { apiService } from '../services/api';
+import { useChat } from '../contexts/ChatContext';
+
+interface CaseData {
+  id: string;
+  user_id: string;
+  injury_type: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  settlement_estimate?: {
+    low_estimate: number;
+    high_estimate: number;
+    confidence: string;
+  };
+  demand_letter?: string;
+  documents?: any[];
+  required_documents?: string[];
+}
+
 import { SubscriptionManager } from '../components/subscription/SubscriptionManager';
 
+
 const Dashboard = () => {
-  // Sample data for documents - keeping original data
-  const documents = [
-    {
-      id: 1,
-      name: 'Tax Declaration Form',
-      status: 'Generated',
-      date: 'Oct 12, 2023',
-    },
-    {
-      id: 2,
-      name: 'Employee Contract',
-      status: 'Generated',
-      date: 'Oct 10, 2023',
-    },
-    {
-      id: 3,
-      name: 'Non-Disclosure Agreement',
-      status: 'Generated',
-      date: 'Oct 8, 2023',
-    },
-    {
-      id: 4,
-      name: 'Investment Disclosure',
-      status: 'Generated',
-      date: 'Oct 5, 2023',
-    },
-    {
-      id: 5,
-      name: 'Financial Statement',
-      status: 'Generated',
-      date: 'Oct 3, 2023',
-    },
-    {
-      id: 6,
-      name: 'Compliance Certificate',
-      status: 'Pending',
-      date: 'Awaiting data',
-    },
-    {
-      id: 7,
-      name: 'Annual Report Template',
-      status: 'Pending',
-      date: 'Awaiting data',
-    },
-    {
-      id: 8,
-      name: 'Vendor Agreement',
-      status: 'Generated',
-      date: 'Sep 28, 2023',
-    },
-    {
-      id: 9,
-      name: 'Client Onboarding Form',
-      status: 'Generated',
-      date: 'Sep 25, 2023',
-    },
-    {
-      id: 10,
-      name: 'Data Processing Agreement',
-      status: 'Generated',
-      date: 'Sep 22, 2023',
-    },
-    {
-      id: 11,
-      name: 'Security Assessment',
-      status: 'Pending',
-      date: 'Awaiting data',
-    },
-    {
-      id: 12,
-      name: 'Expense Report Template',
-      status: 'Generated',
-      date: 'Sep 18, 2023',
-    },
-    {
-      id: 13,
-      name: 'Privacy Policy Template',
-      status: 'Generated',
-      date: 'Sep 15, 2023',
-    },
-    {
-      id: 14,
-      name: 'Terms of Service Template',
-      status: 'Generated',
-      date: 'Sep 12, 2023',
-    },
-    {
-      id: 15,
-      name: 'Intellectual Property Form',
-      status: 'Pending',
-      date: 'Awaiting data',
-    },
-  ];
+  const { state: chatState } = useChat();
+  const [cases, setCases] = useState<CaseData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCase, setSelectedCase] = useState<CaseData | null>(null);
+  const [showCreateCase] = useState(false);
 
-  // Sample data for presentations - keeping original data
-  const presentations = [
-    {
-      id: 1,
-      name: 'Q3 Financial Review',
-      size: '4.2 MB',
-      date: 'Oct 5, 2023',
-    },
-    {
-      id: 2,
-      name: 'Investment Opportunities',
-      size: '3.7 MB',
-      date: 'Oct 1, 2023',
-    },
-    {
-      id: 3,
-      name: 'Market Analysis Report',
-      size: '5.1 MB',
-      date: 'Sep 28, 2023',
-    },
-    {
-      id: 4,
-      name: 'Strategic Planning',
-      size: '2.8 MB',
-      date: 'Sep 22, 2023',
-    },
-  ];
-  
-  // Tasks data - keeping original data
-  const tasks = [
-    {
-      id: 1,
-      name: 'Complete account setup',
-      completed: true,
-    },
-    {
-      id: 2,
-      name: 'Set up payment methods',
-      completed: true,
-    },
-    {
-      id: 3,
-      name: 'Create first savings goal',
-      completed: false,
-    },
-    {
-      id: 4,
-      name: 'Connect external accounts',
-      completed: false,
-    },
-    {
-      id: 5,
-      name: 'Review security settings',
-      completed: false,
-    },
-    {
-      id: 6,
-      name: 'Schedule quarterly review',
-      completed: false,
-    },
-  ];
+  // Load user cases
+  useEffect(() => {
+    const loadCases = async () => {
+      try {
+        setLoading(true);
+        const response = await apiService.getUserCases(chatState.currentUserId);
+        setCases(response.cases);
+      } catch (error) {
+        console.error('Failed to load cases:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Calculate completion percentage - keeping original logic
-  const completedTasks = tasks.filter((task) => task.completed).length;
-  const completionPercentage = (completedTasks / tasks.length) * 100;
+    loadCases();
+  }, [chatState.currentUserId]);
+
+  // Listen for case creation events from chat
+  useEffect(() => {
+    const handleCaseCreated = () => {
+      // Reload cases when a new case is created
+      const loadCases = async () => {
+        try {
+          const response = await apiService.getUserCases(chatState.currentUserId);
+          setCases(response.cases);
+        } catch (error) {
+          console.error('Failed to reload cases:', error);
+        }
+      };
+      loadCases();
+    };
+
+    window.addEventListener('caseCreated', handleCaseCreated);
+    return () => window.removeEventListener('caseCreated', handleCaseCreated);
+  }, [chatState.currentUserId]);
+
+  const getStatusColor = (status: string) => {
+    const statusColors: { [key: string]: string } = {
+      'initial': 'bg-gray-500',
+      'collecting_documents': 'bg-yellow-500',
+      'reviewing': 'bg-blue-500',
+      'generating_demand_letter': 'bg-purple-500',
+      'demand_sent': 'bg-orange-500',
+      'negotiating': 'bg-indigo-500',
+      'settlement_reached': 'bg-green-500',
+      'litigation': 'bg-red-500',
+      'closed': 'bg-gray-600'
+    };
+    return statusColors[status] || 'bg-gray-500';
+  };
+
+  const getStatusText = (status: string) => {
+    return status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
   return (
     <div className="min-h-screen bg-[#111111]">
-      {/* Background elements - subtle, no animation - positioned only within main content area */}
+      {/* Background elements */}
       <div className="fixed inset-0 pointer-events-none" style={{ zIndex: -1 }}>
         <div
           className="absolute inset-0 opacity-[0.01]"
@@ -194,69 +120,165 @@ const Dashboard = () => {
             backgroundSize: '100px 100px'
           }}
         />
-        {/* Static floating elements */}
         <div className="absolute top-32 left-20 w-1 h-1 bg-[#8dff2d] rounded-full opacity-20" />
         <div className="absolute top-64 right-32 w-1 h-1 bg-[#8dff2d] rounded-full opacity-15" />
         <div className="absolute bottom-64 left-40 w-1 h-1 bg-[#8dff2d] rounded-full opacity-25" />
         <div className="absolute inset-0 bg-gradient-to-br from-[#111111] via-transparent to-[#111111]" />
       </div>
 
-      <div className="flex">
-        {/* Main content */}
-        <main className="flex-1 p-6 relative">
-          <div className="max-w-6xl mx-auto">
-            {/* Header - keeping original structure */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-              <div>
-                <h1 className="text-3xl font-semibold text-white">Dashboard</h1>
-                <p className="text-gray-300 font-normal">Welcome back, Danielle M.</p>
-              </div>
-              <div className="mt-4 md:mt-0 flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden">
-                  <img
-                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=256&q=80"
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </div>
-            </div>
+      <div className="container mx-auto px-6 py-8">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-semibold text-white">Case Dashboard</h1>
+            <p className="text-gray-300">Manage your personal injury cases</p>
+          </div>
+          <div className="flex items-center gap-4 mt-4 md:mt-0">
+            <Link
+              to="/chat"
+              className="flex items-center gap-2 px-4 py-2 bg-[#8dff2d] text-black rounded-lg hover:bg-[#7be525] transition-colors font-medium"
+            >
+              <BotIcon className="h-4 w-4" />
+              Start New Case
+            </Link>
+            <button
+              onClick={() => setShowCreateCase(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-[#333333] text-white rounded-lg hover:bg-[#444444] transition-colors"
+            >
+              <PlusIcon className="h-4 w-4" />
+              Create Case
+            </button>
+          </div>
+        </div>
 
-            {/* Membership Info - keeping original structure but updated styling */}
-            <div className="mb-8 bg-[#0a0a0a]/90 backdrop-blur-xl rounded-2xl p-6 border border-[#333333]/50">
-              <div className="flex flex-col md:flex-row gap-6">
-                <div className="flex-1">
-                  <h2 className="text-xl font-semibold flex items-center gap-2 mb-4 text-white">
-                    <UserIcon className="h-5 w-5 text-[#8dff2d]" />
-                    Membership Information
-                  </h2>
-                  <div className="bg-[#111111]/50 rounded-lg p-6 border border-[#333333]">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <div className="text-sm text-gray-400">Member</div>
-                        <div className="font-medium text-xl text-white">Danielle M.</div>
-                      </div>
-                      <div className="bg-[#8dff2d] text-black px-3 py-1 rounded-full text-sm font-medium">
-                        Premium
-                      </div>
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-[#0a0a0a]/90 backdrop-blur-xl rounded-2xl p-6 border border-[#333333]/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">Total Cases</p>
+                <p className="text-2xl font-bold text-white">{cases.length}</p>
+              </div>
+              <FileTextIcon className="h-8 w-8 text-[#8dff2d]" />
+            </div>
+          </div>
+          
+          <div className="bg-[#0a0a0a]/90 backdrop-blur-xl rounded-2xl p-6 border border-[#333333]/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">Active Cases</p>
+                <p className="text-2xl font-bold text-white">
+                  {cases.filter(c => !['closed', 'settlement_reached'].includes(c.status)).length}
+                </p>
+              </div>
+              <TrendingUpIcon className="h-8 w-8 text-[#8dff2d]" />
+            </div>
+          </div>
+          
+          <div className="bg-[#0a0a0a]/90 backdrop-blur-xl rounded-2xl p-6 border border-[#333333]/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">Settlements</p>
+                <p className="text-2xl font-bold text-white">
+                  {cases.filter(c => c.status === 'settlement_reached').length}
+                </p>
+              </div>
+              <DollarSignIcon className="h-8 w-8 text-[#8dff2d]" />
+            </div>
+          </div>
+          
+          <div className="bg-[#0a0a0a]/90 backdrop-blur-xl rounded-2xl p-6 border border-[#333333]/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-400">Total Value</p>
+                <p className="text-2xl font-bold text-white">
+                  {formatCurrency(
+                    cases.reduce((sum, case_) => 
+                      sum + (case_.settlement_estimate?.high_estimate || 0), 0
+                    )
+                  )}
+                </p>
+              </div>
+              <WalletIcon className="h-8 w-8 text-[#8dff2d]" />
+            </div>
+          </div>
+        </div>
+
+        {/* Cases Grid */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#8dff2d]"></div>
+          </div>
+        ) : cases.length === 0 ? (
+          <div className="text-center py-12">
+            <FileTextIcon className="h-16 w-16 text-gray-500 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-white mb-2">No Cases Yet</h3>
+            <p className="text-gray-400 mb-6">Start by creating your first personal injury case</p>
+            <Link
+              to="/chat"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#8dff2d] text-black rounded-lg hover:bg-[#7be525] transition-colors font-medium"
+            >
+              <BotIcon className="h-5 w-5" />
+              Start with AI Assistant
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {cases.map((case_) => (
+              <motion.div
+                key={case_.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-[#0a0a0a]/90 backdrop-blur-xl rounded-2xl p-6 border border-[#333333]/50 hover:border-[#8dff2d]/30 transition-colors"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white capitalize">
+                      {case_.injury_type.replace('-', ' ')}
+                    </h3>
+                    <p className="text-sm text-gray-400">Case #{case_.id.split('_').pop()}</p>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(case_.status)} text-white`}>
+                    {getStatusText(case_.status)}
+                  </span>
+                </div>
+
+                {case_.settlement_estimate && (
+                  <div className="mb-4 p-3 bg-[#111111]/50 rounded-lg">
+                    <div className="flex items-center gap-2 mb-1">
+                      <DollarSignIcon className="h-4 w-4 text-[#8dff2d]" />
+                      <span className="text-sm font-medium text-white">Settlement Estimate</span>
                     </div>
-                    <div className="mb-4">
-                      <div className="text-sm text-gray-400 mb-1">
-                        Membership expires in
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <ClockIcon className="h-4 w-4 text-[#8dff2d]" />
-                        <span className="text-xl font-semibold text-white">42 days</span>
-                      </div>
+                    <div className="text-lg font-bold text-[#8dff2d]">
+                      {formatCurrency(case_.settlement_estimate.low_estimate)} - {formatCurrency(case_.settlement_estimate.high_estimate)}
                     </div>
-                    <div className="text-sm text-gray-400">
-                      Auto-renewal is{' '}
-                      <span className="text-[#8dff2d]">enabled</span>
+                    <div className="text-xs text-gray-400">
+                      Confidence: {case_.settlement_estimate.confidence}
                     </div>
                   </div>
+                )}
+
+                <div className="flex items-center justify-between text-sm text-gray-400 mb-4">
+                  <span>Created: {new Date(case_.created_at).toLocaleDateString()}</span>
+                  <span>Updated: {new Date(case_.updated_at).toLocaleDateString()}</span>
                 </div>
-              </div>
-            </div>
+
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setSelectedCase(case_)}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[#333333] text-white rounded-lg hover:bg-[#444444] transition-colors text-sm"
+                  >
+                    <EyeIcon className="h-4 w-4" />
+                    View Details
+                  </button>
+                  <Link
+                    to="/chat"
+                    className="flex items-center justify-center gap-2 px-3 py-2 bg-[#8dff2d] text-black rounded-lg hover:bg-[#7be525] transition-colors text-sm"
+                  >
+                    <MessageCircleIcon className="h-4 w-4" />
+                    Chat
+                  </Link>
 
             {/* Subscription Management Section */}
             <div className="mb-8 bg-[#0a0a0a]/90 backdrop-blur-xl rounded-2xl p-6 border border-[#333333]/50">
@@ -342,102 +364,80 @@ const Dashboard = () => {
                       View all 15 documents
                     </button>
                   </div>
-                </div>
 
-                {/* PowerPoint Section - keeping original structure but updated styling */}
-                <div className="bg-[#0a0a0a]/90 backdrop-blur-xl rounded-2xl p-6 border border-[#333333]/50">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-semibold flex items-center gap-2 text-white">
-                      <FileTextIcon className="h-5 w-5 text-[#8dff2d]" />
-                      Presentations
-                    </h2>
-                    <button className="text-sm text-[#8dff2d] flex items-center gap-1 font-medium hover:text-[#7be525] transition-colors">
-                      <UploadIcon className="h-4 w-4" />
-                      Upload New
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {presentations.map((presentation) => (
-                      <div
-                        key={presentation.id}
-                        className="flex items-center p-4 bg-[#111111]/50 rounded-lg border border-[#333333] hover:border-[#8dff2d] transition-colors"
-                      >
-                        <div className="w-10 h-10 rounded bg-[#333333] flex items-center justify-center mr-3">
-                          <FileTextIcon className="h-5 w-5 text-[#8dff2d]" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-medium text-white">
-                            {presentation.name}.pptx
-                          </div>
-                          <div className="text-xs text-gray-400">
-                            {presentation.size} • Added {presentation.date}
-                          </div>
-                        </div>
-                        <button className="ml-2 p-2 rounded-full hover:bg-[#333333] transition-colors">
-                          <DownloadIcon className="h-4 w-4 text-[#8dff2d]" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-6 border border-dashed border-[#333333] rounded-lg p-6 text-center">
-                    <UploadIcon className="h-8 w-8 text-gray-500 mx-auto mb-2" />
-                    <p className="text-gray-400 mb-2 font-normal">
-                      Drag and drop files here or
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        {/* Case Detail Modal */}
+        {selectedCase && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-[#0a0a0a] rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-white">Case Details</h2>
+                <button
+                  onClick={() => setSelectedCase(null)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-gray-400">Case ID</label>
+                  <p className="text-white font-mono">{selectedCase.id}</p>
+                </div>
+                
+                <div>
+                  <label className="text-sm text-gray-400">Injury Type</label>
+                  <p className="text-white capitalize">{selectedCase.injury_type.replace('-', ' ')}</p>
+                </div>
+                
+                <div>
+                  <label className="text-sm text-gray-400">Status</label>
+                  <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedCase.status)} text-white`}>
+                    {getStatusText(selectedCase.status)}
+                  </span>
+                </div>
+                
+                {selectedCase.settlement_estimate && (
+                  <div>
+                    <label className="text-sm text-gray-400">Settlement Estimate</label>
+                    <p className="text-lg font-bold text-[#8dff2d]">
+                      {formatCurrency(selectedCase.settlement_estimate.low_estimate)} - {formatCurrency(selectedCase.settlement_estimate.high_estimate)}
                     </p>
-                    <button className="px-4 py-2 bg-[#333333] text-[#8dff2d] rounded-lg hover:bg-[#444444] transition-colors font-medium">
-                      Browse Files
-                    </button>
+                    <p className="text-sm text-gray-400">
+                      Confidence: {selectedCase.settlement_estimate.confidence}
+                    </p>
                   </div>
+                )}
+                
+                <div className="flex gap-2 pt-4">
+                  <Link
+                    to="/chat"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#8dff2d] text-black rounded-lg hover:bg-[#7be525] transition-colors"
+                  >
+                    <MessageCircleIcon className="h-4 w-4" />
+                    Continue Chat
+                  </Link>
+                  {selectedCase.demand_letter && (
+                    <button className="flex items-center justify-center gap-2 px-4 py-2 bg-[#333333] text-white rounded-lg hover:bg-[#444444] transition-colors">
+                      <DownloadIcon className="h-4 w-4" />
+                      Download Letter
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
           </div>
-        </main>
+        )}
       </div>
     </div>
   );
 };
 
-// DownloadIcon component - keeping original
-const DownloadIcon = ({ className }: { className?: string }) => {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-      <polyline points="7 10 12 15 17 10" />
-      <line x1="12" y1="15" x2="12" y2="3" />
-    </svg>
-  );
-};
-
-// CheckIcon component - keeping original
-const CheckIcon = ({ className }: { className?: string }) => {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-};
 
 export default Dashboard;

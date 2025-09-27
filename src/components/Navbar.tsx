@@ -27,11 +27,18 @@ const Navbar = () => {
           <Link to="/" className="text-gray-300 hover:text-white transition-colors">
             Home
           </Link>
+
+          <Link to="/chat" className="text-gray-300 hover:text-white transition-colors">
+            AI Chat
+          </Link>
+        
+
           <SignedIn>
             <Link to="/dashboard" className="text-gray-300 hover:text-white transition-colors">
               Dashboard
             </Link>
           </SignedIn>
+
           <Link to="/pricing" className="text-gray-300 hover:text-white transition-colors">
             Pricing
           </Link>
@@ -99,6 +106,15 @@ const Navbar = () => {
             >
               Home
             </Link>
+
+            <Link
+              to="/chat"
+              className="block text-gray-300 hover:text-white hover:bg-[#222222] transition-colors py-3 px-4 rounded-lg text-lg"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              AI Chat
+            </Link>
+         
             <SignedIn>
               <Link
                 to="/dashboard"
@@ -108,6 +124,7 @@ const Navbar = () => {
                 Dashboard
               </Link>
             </SignedIn>
+
             <Link
               to="/pricing"
               className="block text-gray-300 hover:text-white hover:bg-[#222222] transition-colors py-3 px-4 rounded-lg text-lg"
