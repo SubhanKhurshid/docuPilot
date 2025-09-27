@@ -15,7 +15,9 @@ import {
   UploadIcon,
   UserIcon,
   WalletIcon,
+  CreditCardIcon,
 } from 'lucide-react';
+import { SubscriptionManager } from '../components/subscription/SubscriptionManager';
 
 const Dashboard = () => {
   // Sample data for documents - keeping original data
@@ -254,6 +256,15 @@ const Dashboard = () => {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Subscription Management Section */}
+            <div className="mb-8 bg-[#0a0a0a]/90 backdrop-blur-xl rounded-2xl p-6 border border-[#333333]/50">
+              <h2 className="text-xl font-semibold flex items-center gap-2 mb-6 text-white">
+                <CreditCardIcon className="h-5 w-5 text-[#8dff2d]" />
+                Subscription Management
+              </h2>
+              <SubscriptionManager />
             </div>
 
             {/* Main Dashboard Sections - keeping original structure */}

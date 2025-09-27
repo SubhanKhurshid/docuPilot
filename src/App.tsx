@@ -11,6 +11,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfUse from './pages/TermsOfUse';
 import Disclaimer from './pages/Disclaimer';
 
+
 export function App() {
   return <div className="bg-[#111111] min-h-screen text-white font-sans flex flex-col">
       <Navbar />

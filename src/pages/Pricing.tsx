@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useUser } from '@clerk/clerk-react';
+import { Modal } from '../components/ui/Modal';
+import { SubscriptionCheckout } from '../components/subscription/SubscriptionCheckout';
 import {
   ArrowRightIcon,
-  CheckIcon,
   ChevronDownIcon,
   ChevronUpIcon,
   ShieldCheckIcon,
@@ -18,7 +20,9 @@ import {
 } from 'lucide-react';
 
 const Pricing = () => {
+  const { isSignedIn } = useUser();
   const [openFaq, setOpenFaq] = useState<number[]>([]);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
 
   const toggleFaq = (index: number) => {
     setOpenFaq(prev =>
@@ -26,6 +30,26 @@ const Pricing = () => {
         ? prev.filter(item => item !== index)
         : [...prev, index]
     );
+  };
+
+  const handleStartTrial = () => {
+    if (!isSignedIn) {
+      // Redirect to sign up if not authenticated
+      window.location.href = '/signup';
+      return;
+    }
+    setShowCheckoutModal(true);
+  };
+
+  const handleCheckoutSuccess = () => {
+    setShowCheckoutModal(false);
+    // Redirect to dashboard or show success message
+    window.location.href = '/dashboard?subscription=success';
+  };
+
+  const handleCheckoutError = (error: string) => {
+    console.error('Checkout error:', error);
+    // You can add a toast notification here
   };
 
   const features = [
@@ -300,7 +324,7 @@ const Pricing = () => {
                       transition={{ duration: 0.6, delay: 0.2 }}
                       viewport={{ once: true }}
                     >
-                      $197
+                      $167
                     </motion.div>
                     <div className="text-gray-300 font-normal">per year</div>
                     <div className="text-sm text-[#8dff2d] mt-2 font-medium">Save 67% vs. lawyer fees</div>
@@ -328,8 +352,8 @@ const Pricing = () => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <Link
-                      to="/signup"
+                    <button
+                      onClick={handleStartTrial}
                       className="group block w-full text-center px-8 py-4 rounded-full bg-[#8dff2d] text-black font-semibold text-lg hover:bg-[#7be525] transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20"
                     >
                       Start Free Trial
@@ -340,7 +364,7 @@ const Pricing = () => {
                       >
                         <ArrowRightIcon className="h-5 w-5 inline" />
                       </motion.div>
-                    </Link>
+                    </button>
                   </motion.div>
 
                   <p className="text-center text-sm text-gray-400 mt-6 font-normal">
@@ -475,8 +499,8 @@ const Pricing = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Link
-                    to="/signup"
+                  <button
+                    onClick={handleStartTrial}
                     className="group inline-flex items-center px-8 py-4 rounded-full bg-[#8dff2d] text-black font-semibold text-lg hover:bg-[#7be525] transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20"
                   >
                     Start Your Free Trial
@@ -487,7 +511,7 @@ const Pricing = () => {
                     >
                       <ArrowRightIcon className="h-5 w-5" />
                     </motion.div>
-                  </Link>
+                  </button>
                 </motion.div>
                 <motion.div
                   whileHover={{ scale: 1.02 }}
@@ -509,6 +533,19 @@ const Pricing = () => {
           </div>
         </section>
       </div>
+
+      {/* Subscription Checkout Modal */}
+      <Modal
+        isOpen={showCheckoutModal}
+        onClose={() => setShowCheckoutModal(false)}
+        title="Start Your Free Trial"
+        size="md"
+      >
+        <SubscriptionCheckout
+          onSuccess={handleCheckoutSuccess}
+          onError={handleCheckoutError}
+        />
+      </Modal>
     </div>
   );
 };
