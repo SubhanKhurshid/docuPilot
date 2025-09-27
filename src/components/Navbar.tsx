@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/clerk-react';
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -26,12 +27,18 @@ const Navbar = () => {
           <Link to="/" className="text-gray-300 hover:text-white transition-colors">
             Home
           </Link>
+
           <Link to="/chat" className="text-gray-300 hover:text-white transition-colors">
             AI Chat
           </Link>
-          <Link to="/dashboard" className="text-gray-300 hover:text-white transition-colors">
-            Dashboard
-          </Link>
+        
+
+          <SignedIn>
+            <Link to="/dashboard" className="text-gray-300 hover:text-white transition-colors">
+              Dashboard
+            </Link>
+          </SignedIn>
+
           <Link to="/pricing" className="text-gray-300 hover:text-white transition-colors">
             Pricing
           </Link>
@@ -39,12 +46,40 @@ const Navbar = () => {
 
         {/* Desktop Auth Buttons */}
         <div className="hidden md:flex items-center gap-4">
-          <Link to="/login" className="px-4 py-2 rounded-full bg-[#222222] text-white hover:bg-[#333333] transition-colors">
-            Login
-          </Link>
-          <Link to="/signup" className="px-4 py-2 rounded-full bg-[#8dff2d] text-black font-medium hover:bg-[#7be525] transition-colors">
-            Signup
-          </Link>
+          <SignedOut>
+            <SignInButton mode="modal" redirectUrl="/dashboard">
+              <button className="px-4 py-2 rounded-full bg-[#222222] text-white hover:bg-[#333333] transition-colors">
+                Login
+              </button>
+            </SignInButton>
+            <SignUpButton mode="modal" redirectUrl="/dashboard">
+              <button className="px-4 py-2 rounded-full bg-[#8dff2d] text-black font-medium hover:bg-[#7be525] transition-colors">
+                Signup
+              </button>
+            </SignUpButton>
+          </SignedOut>
+          <SignedIn>
+            <UserButton 
+              appearance={{
+                baseTheme: undefined,
+                variables: {
+                  colorPrimary: "#8dff2d",
+                  colorBackground: "#191919",
+                  colorText: "#ffffff",
+                  colorTextSecondary: "#9ca3af",
+                  borderRadius: "0.75rem",
+                },
+                elements: {
+                  avatarBox: "w-10 h-10 border-2 border-[#333333] hover:border-[#8dff2d] transition-colors",
+                  userButtonPopoverCard: "bg-[#191919] border border-[#333333] shadow-xl rounded-xl",
+                  userButtonPopoverActionButton: "text-gray-300 hover:text-white hover:bg-[#222222] transition-colors rounded-lg",
+                  userButtonPopoverActionButtonText: "text-gray-300 hover:text-white font-medium",
+                  userButtonPopoverActionButtonIcon: "text-gray-400 hover:text-[#8dff2d]",
+                  userButtonPopoverFooter: "border-t border-[#333333] bg-[#191919]",
+                }
+              }}
+            />
+          </SignedIn>
         </div>
 
         {/* Mobile Hamburger Button */}
@@ -71,6 +106,7 @@ const Navbar = () => {
             >
               Home
             </Link>
+
             <Link
               to="/chat"
               className="block text-gray-300 hover:text-white hover:bg-[#222222] transition-colors py-3 px-4 rounded-lg text-lg"
@@ -78,13 +114,17 @@ const Navbar = () => {
             >
               AI Chat
             </Link>
-            <Link
-              to="/dashboard"
-              className="block text-gray-300 hover:text-white hover:bg-[#222222] transition-colors py-3 px-4 rounded-lg text-lg"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Dashboard
-            </Link>
+         
+            <SignedIn>
+              <Link
+                to="/dashboard"
+                className="block text-gray-300 hover:text-white hover:bg-[#222222] transition-colors py-3 px-4 rounded-lg text-lg"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+            </SignedIn>
+
             <Link
               to="/pricing"
               className="block text-gray-300 hover:text-white hover:bg-[#222222] transition-colors py-3 px-4 rounded-lg text-lg"
@@ -95,20 +135,49 @@ const Navbar = () => {
 
             {/* Mobile Auth Buttons */}
             <div className="flex flex-col gap-3 pt-6 border-t border-[#333333]">
-              <Link
-                to="/login"
-                className="px-6 py-3 rounded-full bg-[#222222] text-white hover:bg-[#333333] transition-colors text-center text-lg font-medium"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Login
-              </Link>
-              <Link
-                to="/signup"
-                className="px-6 py-3 rounded-full bg-[#8dff2d] text-black font-medium hover:bg-[#7be525] transition-colors text-center text-lg"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Get Started
-              </Link>
+              <SignedOut>
+                <SignInButton mode="modal" redirectUrl="/dashboard">
+                  <button 
+                    className="px-6 py-3 rounded-full bg-[#222222] text-white hover:bg-[#333333] transition-colors text-center text-lg font-medium w-full"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Login
+                  </button>
+                </SignInButton>
+                <SignUpButton mode="modal" redirectUrl="/dashboard">
+                  <button 
+                    className="px-6 py-3 rounded-full bg-[#8dff2d] text-black font-medium hover:bg-[#7be525] transition-colors text-center text-lg w-full"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Get Started
+                  </button>
+                </SignUpButton>
+              </SignedOut>
+              <SignedIn>
+                <div className="flex items-center justify-between py-3 px-4">
+                  <span className="text-gray-300 text-lg">Account</span>
+                  <UserButton 
+                    appearance={{
+                      baseTheme: undefined,
+                      variables: {
+                        colorPrimary: "#8dff2d",
+                        colorBackground: "#191919",
+                        colorText: "#ffffff",
+                        colorTextSecondary: "#9ca3af",
+                        borderRadius: "0.75rem",
+                      },
+                      elements: {
+                        avatarBox: "w-10 h-10 border-2 border-[#333333] hover:border-[#8dff2d] transition-colors",
+                        userButtonPopoverCard: "bg-[#191919] border border-[#333333] shadow-xl rounded-xl",
+                        userButtonPopoverActionButton: "text-gray-300 hover:text-white hover:bg-[#222222] transition-colors rounded-lg",
+                        userButtonPopoverActionButtonText: "text-gray-300 hover:text-white font-medium",
+                        userButtonPopoverActionButtonIcon: "text-gray-400 hover:text-[#8dff2d]",
+                        userButtonPopoverFooter: "border-t border-[#333333] bg-[#191919]",
+                      }
+                    }}
+                  />
+                </div>
+              </SignedIn>
             </div>
           </div>
         </div>
