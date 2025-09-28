@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from '../contexts/AuthContext';
+import PaymentModal from '../components/PaymentModal';
 import {
   ArrowRightIcon,
   CheckIcon,
@@ -18,7 +20,10 @@ import {
 } from 'lucide-react';
 
 const Pricing = () => {
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState<number[]>([]);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const toggleFaq = (index: number) => {
     setOpenFaq(prev =>
@@ -27,6 +32,24 @@ const Pricing = () => {
         : [...prev, index]
     );
   };
+
+  const handleGetStarted = () => {
+    if (!isAuthenticated) {
+      navigate('/signup');
+      return;
+    }
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentSuccess = () => {
+    setShowPaymentModal(false);
+    navigate('/dashboard');
+  };
+
+  const handlePaymentCancel = () => {
+    setShowPaymentModal(false);
+  };
+
 
   const features = [
     {
@@ -139,6 +162,7 @@ const Pricing = () => {
       }
     }
   };
+
 
   return (
     <div className="relative min-h-screen bg-[#111111] overflow-hidden">
@@ -328,8 +352,8 @@ const Pricing = () => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <Link
-                      to="/signup"
+                    <button
+                      onClick={handleGetStarted}
                       className="group block w-full text-center px-8 py-4 rounded-full bg-[#8dff2d] text-black font-semibold text-lg hover:bg-[#7be525] transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20"
                     >
                       Start Free Trial
@@ -340,7 +364,7 @@ const Pricing = () => {
                       >
                         <ArrowRightIcon className="h-5 w-5 inline" />
                       </motion.div>
-                    </Link>
+                    </button>
                   </motion.div>
 
                   <p className="text-center text-sm text-gray-400 mt-6 font-normal">
@@ -509,6 +533,15 @@ const Pricing = () => {
           </div>
         </section>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={handlePaymentCancel}
+        onSuccess={handlePaymentSuccess}
+        userEmail={user?.email || ''}
+        userId={user?.id || ''}
+      />
     </div>
   );
 };
