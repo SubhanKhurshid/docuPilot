@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { SubscriptionProvider } from '../contexts/SubscriptionContext';
 import { apiClient } from '../lib/api';
 import DashboardSidebar from '../components/DashboardSidebar';
 import DashboardMain from '../components/DashboardMain';
 import DashboardChat from '../components/DashboardChat';
 import DashboardDocuments from '../components/DashboardDocuments';
 import DashboardAnalytics from '../components/DashboardAnalytics';
+import DashboardSubscription from '../components/DashboardSubscription';
 
 const Dashboard = () => {
   const { user, isAuthenticated } = useAuth();
@@ -117,8 +117,7 @@ const Dashboard = () => {
   }
 
   return (
-    <SubscriptionProvider userId={user.id}>
-      <div className="min-h-screen bg-black flex">
+    <div className="min-h-screen bg-black flex">
         <DashboardSidebar
           activeTab={activeTab}
           onTabChange={handleTabChange}
@@ -143,6 +142,10 @@ const Dashboard = () => {
             <DashboardAnalytics
               userId={user.id}
             />
+          ) : activeTab === 'subscription' ? (
+            <DashboardSubscription
+              userId={user.id}
+            />
           ) : (
             <DashboardMain
               userId={user.id}
@@ -151,7 +154,6 @@ const Dashboard = () => {
           )}
         </div>
       </div>
-    </SubscriptionProvider>
   );
 };
 

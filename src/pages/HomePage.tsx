@@ -5,22 +5,22 @@ import {
   ArrowRightIcon,
   CheckIcon,
   ShieldCheckIcon,
-  ClockIcon,
   FileTextIcon,
   BarChart3Icon,
   StarIcon,
-  PlayIcon,
   SendIcon,
   SparklesIcon,
   TrendingUpIcon,
-  UsersIcon,
   BotIcon,
   DollarSignIcon
 } from 'lucide-react';
 import ChatBubble from '../components/ChatBubble';
 import { CircularProgress } from '../components/CircularProgress';
 import SettlementCalculator from '../components/SettlementCalculator';
+import { useSubscription } from '../contexts/SubscriptionContext';
+
 const HomePage = () => {
+  const { hasActiveSubscription } = useSubscription();
   const [messages, setMessages] = useState([{
     id: 1,
     text: "Hello! I'm DocuPilot AI. I can help you maximize your personal injury settlement.",
@@ -222,7 +222,7 @@ const HomePage = () => {
                         to="/signup"
                         className="group inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-[#8dff2d] text-black font-semibold text-base sm:text-lg hover:bg-[#7be525] transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20 w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]"
                       >
-                        Start Free Assessment
+                        {hasActiveSubscription ? "Go to Dashboard" : "Start Free Assessment"}
                         <motion.div
                           className="ml-2"
                           animate={{ x: [0, 4, 0] }}
@@ -233,14 +233,7 @@ const HomePage = () => {
                       </Link>
                     </motion.div>
 
-                    <motion.button
-                      className="border-[#8dff2d] group inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full border border-[#333333] text-white font-semibold text-base sm:text-lg hover:border-[#8dff2d] hover:bg-[#8dff2d]/5 transition-all duration-300 w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <PlayIcon className="mr-2 h-5 w-5" />
-                      Watch Demo
-                    </motion.button>
+                   
                   </motion.div>
 
                   <motion.div
@@ -645,7 +638,7 @@ const HomePage = () => {
                     to="/signup"
                     className="group inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-[#8dff2d] text-black font-semibold text-base sm:text-lg hover:bg-[#7be525] transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20 w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]"
                   >
-                    Start Free Trial
+                    {hasActiveSubscription ? "Go to Dashboard" : "Start Free Trial"}
                     <motion.div
                       className="ml-2"
                       animate={{ x: [0, 4, 0] }}
@@ -655,21 +648,26 @@ const HomePage = () => {
                     </motion.div>
                   </Link>
                 </motion.div>
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Link
-                    to="/pricing"
-                    className="border-[#8dff2d] inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full border border-[#333333] text-white font-semibold text-base sm:text-lg hover:border-[#8dff2d] hover:bg-[#8dff2d]/5 transition-all duration-300 w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]"
+                {!hasActiveSubscription && (
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    View Pricing
-                  </Link>
-                </motion.div>
+                    <Link
+                      to="/pricing"
+                      className="border-[#8dff2d] inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full border border-[#333333] text-white font-semibold text-base sm:text-lg hover:border-[#8dff2d] hover:bg-[#8dff2d]/5 transition-all duration-300 w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]"
+                    >
+                      View Pricing
+                    </Link>
+                  </motion.div>
+                )}
               </div>
 
               <p className="text-sm text-gray-400 font-normal">
-                No credit card required • 7-day free trial • Cancel anytime
+                {hasActiveSubscription 
+                  ? "You have an active subscription" 
+                  : "No credit card required • 7-day free trial • Cancel anytime"
+                }
               </p>
             </motion.div>
           </div>

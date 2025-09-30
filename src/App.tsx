@@ -1,7 +1,7 @@
-import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { ClerkProvider, SignIn, SignUp } from '@clerk/clerk-react';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { SubscriptionProvider } from './contexts/SubscriptionContext';
 import HomePage from './pages/HomePage';
 import Dashboard from './pages/Dashboard';
 import Navbar from './components/Navbar';
@@ -12,23 +12,25 @@ import TermsOfUse from './pages/TermsOfUse';
 import Disclaimer from './pages/Disclaimer';
 
 // Get Clerk publishable key from environment
-const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+const clerkPubKey = (import.meta as any).env.VITE_CLERK_PUBLISHABLE_KEY;
 
 if (!clerkPubKey) {
   throw new Error('Missing Clerk Publishable Key');
 }
 
-export function App() {
+// Wrapper component to provide subscription context
+const AppContent = () => {
+  const { user } = useAuth();
+  
   return (
-    <ClerkProvider publishableKey={clerkPubKey}>
-      <AuthProvider>
-        <div className="bg-[#111111] min-h-screen text-white font-sans flex flex-col">
-          <Navbar />
-          <main className="flex-1">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/pricing" element={<Pricing />} />
+    <SubscriptionProvider userId={user?.id}>
+      <div className="bg-[#111111] min-h-screen text-white font-sans flex flex-col">
+        <Navbar />
+        <main className="flex-1">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/pricing" element={<Pricing />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfUse />} />
               <Route path="/disclaimer" element={<Disclaimer />} />
@@ -90,6 +92,15 @@ export function App() {
           </main>
           <Footer />
         </div>
+      </SubscriptionProvider>
+  );
+};
+
+export function App() {
+  return (
+    <ClerkProvider publishableKey={clerkPubKey}>
+      <AuthProvider>
+        <AppContent />
       </AuthProvider>
     </ClerkProvider>
   );

@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
 import { UserIcon, LogOutIcon } from 'lucide-react';
 
 const Navbar = () => {
   const { user, isAuthenticated, signOut } = useAuth();
+  const { hasActiveSubscription } = useSubscription();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -55,9 +57,11 @@ const Navbar = () => {
           <Link to="/dashboard" className="text-gray-300 hover:text-white transition-colors">
             Dashboard
           </Link>
-          <Link to="/pricing" className="text-gray-300 hover:text-white transition-colors">
-            Pricing
-          </Link>
+          {!hasActiveSubscription && (
+            <Link to="/pricing" className="text-gray-300 hover:text-white transition-colors">
+              Pricing
+            </Link>
+          )}
         </div>
 
         {/* Desktop Auth Buttons */}
@@ -149,13 +153,15 @@ const Navbar = () => {
             >
               Dashboard
             </Link>
-            <Link
-              to="/pricing"
-              className="block text-gray-300 hover:text-white hover:bg-[#222222] transition-colors py-3 px-4 rounded-lg text-lg"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Pricing
-            </Link>
+            {!hasActiveSubscription && (
+              <Link
+                to="/pricing"
+                className="block text-gray-300 hover:text-white hover:bg-[#222222] transition-colors py-3 px-4 rounded-lg text-lg"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Pricing
+              </Link>
+            )}
 
             {/* Mobile Auth Buttons */}
             <div className="flex flex-col gap-3 pt-6 border-t border-[#333333]">

@@ -40,13 +40,7 @@ const DashboardChat: React.FC<DashboardChatProps> = ({ userId, onCaseUpdate }) =
   const [isRecording, setIsRecording] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,23 +149,7 @@ const DashboardChat: React.FC<DashboardChatProps> = ({ userId, onCaseUpdate }) =
 
   return (
     <div className="flex flex-col h-screen bg-black">
-      {/* Chat Header */}
-      <div className="p-6 border-b border-gray-800 bg-gray-900">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#8dff2d] to-[#7be525] flex items-center justify-center">
-            <BotIcon className="h-7 w-7 text-black" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-xl font-semibold text-white">DocuPilot AI Assistant</h3>
-            <p className="text-sm text-gray-300">Your personal injury settlement expert</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-[#8dff2d] rounded-full animate-pulse"></div>
-            <span className="text-sm text-gray-300">Online</span>
-          </div>
-        </div>
-      </div>
-
+     
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {messages.length === 0 && (
@@ -247,7 +225,7 @@ const DashboardChat: React.FC<DashboardChatProps> = ({ userId, onCaseUpdate }) =
                       </motion.div>
                     )}
                     
-                    {message.metadata.required_docs && message.metadata.required_docs.length > 0 && (
+                    {/* {message.metadata.required_docs && message.metadata.required_docs.length > 0 && (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -265,7 +243,7 @@ const DashboardChat: React.FC<DashboardChatProps> = ({ userId, onCaseUpdate }) =
                           ))}
                         </ul>
                       </motion.div>
-                    )}
+                    )} */}
                     
                     {message.metadata.completed_docs && message.metadata.completed_docs.length > 0 && (
                       <motion.div

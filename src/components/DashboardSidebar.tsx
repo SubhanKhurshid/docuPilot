@@ -14,6 +14,7 @@ import {
   HistoryIcon,
   BotIcon,
   SparklesIcon,
+  CreditCardIcon,
 } from 'lucide-react';
 
 interface DashboardSidebarProps {
@@ -43,6 +44,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
     { id: 'cases', label: 'My Cases', icon: BriefcaseIcon },
     { id: 'documents', label: 'Documents', icon: FileIcon },
     { id: 'analytics', label: 'Analytics', icon: BarChart3Icon },
+    { id: 'subscription', label: 'Subscription', icon: CreditCardIcon },
   ];
 
   // Removed settings section

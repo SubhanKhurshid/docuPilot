@@ -37,10 +37,10 @@ export interface CaseDetails {
   case_id: string;
   injury_name: string;
   status: string;
-  required_docs: string[];
-  completed_docs: string[];
+  required_docs?: string[];
+  completed_docs?: string[];
   progress_percentage: number;
-  ai_analysis_summary: {
+  ai_analysis_summary?: {
     total_medical_costs: number;
     total_lost_wages: number;
     total_financial_impact: number;
@@ -65,6 +65,8 @@ export interface SubscriptionCheckResponse {
   subscription_status?: string;
   subscription_id?: string;
   customer_id?: string;
+  trial_days_left?: number;
+  current_period_end?: string;
 }
 
 export interface PaymentIntentRequest {

@@ -246,7 +246,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onCaseUpdate }) =
                       <div>
                         <p className="text-sm text-gray-400">Documents</p>
                         <p className="text-sm font-medium text-white">
-                          {case_.completed_docs.length} / {case_.required_docs.length} completed
+                          {case_.completed_docs?.length || 0} / {case_.required_docs?.length || 0} completed
                         </p>
                       </div>
 
@@ -260,11 +260,11 @@ const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onCaseUpdate }) =
 
                     <div className="flex items-center justify-between">
                       <div className="flex gap-2">
-                        {case_.required_docs.map((doc, docIndex) => (
+                        {(case_.required_docs || []).map((doc, docIndex) => (
                           <span
                             key={docIndex}
                             className={`px-2 py-1 rounded text-xs font-medium ${
-                              case_.completed_docs.includes(doc)
+                              (case_.completed_docs || []).includes(doc)
                                 ? 'bg-[#8dff2d] text-black'
                                 : 'bg-gray-700 text-gray-300'
                             }`}
