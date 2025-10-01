@@ -228,6 +228,15 @@ class ApiClient {
       body: JSON.stringify(request),
     });
   }
+
+  // Chat History API
+  async getUserChats(userId: string) {
+    return this.request(`/api/user/${userId}/chats`);
+  }
+
+  async getChatMessages(chatId: string) {
+    return this.request(`/api/chat/${chatId}/messages`);
+  }
 }
 
 export const apiClient = new ApiClient();

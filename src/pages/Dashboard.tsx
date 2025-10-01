@@ -14,18 +14,51 @@ const Dashboard = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [chatHistory, setChatHistory] = useState<Array<{ id: string; title: string; timestamp: string }>>([]);
   const [activeChatId, setActiveChatId] = useState<string | undefined>();
-  const [currentCaseId, setCurrentCaseId] = useState<string | null>(null);
   const [hasSubscription, setHasSubscription] = useState(false);
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(true);
 
-  // Mock chat history - in real app, this would come from API
+  // Fetch user's chat history
   useEffect(() => {
-    setChatHistory([
-      { id: 'chat1', title: 'Car accident injury case', timestamp: '2 hours ago' },
-      { id: 'chat2', title: 'Workplace injury consultation', timestamp: '1 day ago' },
-      { id: 'chat3', title: 'Slip and fall case', timestamp: '3 days ago' },
-    ]);
-  }, []);
+    const fetchChatHistory = async () => {
+      if (user) {
+        try {
+          const response = await apiClient.getUserChats(user.id) as { chats: Array<{ id: string; title: string; timestamp: string }> };
+          if (response.chats && response.chats.length > 0) {
+            // Format the chat history with relative timestamps
+            const formattedChats = response.chats.map((chat: { id: string; title: string; timestamp: string }) => ({
+              id: chat.id,
+              title: chat.title,
+              timestamp: formatTimestamp(chat.timestamp)
+            }));
+            setChatHistory(formattedChats);
+          }
+        } catch (error) {
+          console.error('Error fetching chat history:', error);
+        }
+      }
+    };
+
+    fetchChatHistory();
+  }, [user]);
+
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) {
+      return `${diffMins} ${diffMins === 1 ? 'minute' : 'minutes'} ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours} ${diffHours === 1 ? 'hour' : 'hours'} ago`;
+    } else if (diffDays < 7) {
+      return `${diffDays} ${diffDays === 1 ? 'day' : 'days'} ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
 
   // Check subscription status
   useEffect(() => {
@@ -71,7 +104,6 @@ const Dashboard = () => {
   };
 
   const handleCaseUpdate = (caseId: string, status: string) => {
-    setCurrentCaseId(caseId);
     console.log('Case updated:', caseId, status);
   };
 
@@ -133,6 +165,17 @@ const Dashboard = () => {
             <DashboardChat
               userId={user.id}
               onCaseUpdate={handleCaseUpdate}
+              activeChatId={activeChatId}
+              onNewChat={() => {
+                setActiveChatId(undefined);
+                setChatHistory(prev => [...prev]);
+              }}
+              onChatCreated={(chatId: string, title: string) => {
+                setChatHistory(prev => [
+                  { id: chatId, title, timestamp: 'Just now' },
+                  ...prev
+                ]);
+              }}
             />
           ) : activeTab === 'documents' ? (
             <DashboardDocuments

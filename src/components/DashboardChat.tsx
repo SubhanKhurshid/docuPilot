@@ -29,9 +29,18 @@ interface Message {
 interface DashboardChatProps {
   userId: string;
   onCaseUpdate?: (caseId: string, status: string) => void;
+  activeChatId?: string;
+  onNewChat?: () => void;
+  onChatCreated?: (chatId: string, title: string) => void;
 }
 
-const DashboardChat: React.FC<DashboardChatProps> = ({ userId, onCaseUpdate }) => {
+const DashboardChat: React.FC<DashboardChatProps> = ({ 
+  userId, 
+  onCaseUpdate,
+  activeChatId,
+  onNewChat,
+  onChatCreated
+}) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -39,6 +48,43 @@ const DashboardChat: React.FC<DashboardChatProps> = ({ userId, onCaseUpdate }) =
   const [currentCaseId, setCurrentCaseId] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Load chat messages when activeChatId changes
+  useEffect(() => {
+    const loadChatMessages = async () => {
+      if (activeChatId && activeChatId !== currentChatId) {
+        try {
+          setIsLoading(true);
+          const response = await apiClient.getChatMessages(activeChatId) as { 
+            messages: Array<{ id: string; content: string; chat_id: string; timestamp: string }> 
+          };
+          
+          if (response.messages && response.messages.length > 0) {
+            const loadedMessages: Message[] = response.messages.map((msg: { 
+              id: string; 
+              content: string; 
+              chat_id: string; 
+              timestamp: string;
+            }) => ({
+              id: msg.id,
+              content: msg.content,
+              isUser: true,
+              timestamp: new Date(msg.timestamp),
+            }));
+            setMessages(loadedMessages);
+            setCurrentChatId(activeChatId);
+          }
+        } catch (error) {
+          console.error('Error loading chat messages:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadChatMessages();
+  }, [activeChatId, currentChatId]);
+
 
   
 
@@ -85,6 +131,13 @@ const DashboardChat: React.FC<DashboardChatProps> = ({ userId, onCaseUpdate }) =
       };
 
       setMessages(prev => [...prev, aiMessage]);
+      
+      // If this is a new chat, notify parent
+      if (!currentChatId && response.chat_id) {
+        const chatTitle = inputValue.length > 50 ? inputValue.substring(0, 47) + '...' : inputValue;
+        onChatCreated?.(response.chat_id, chatTitle);
+      }
+      
       setCurrentChatId(response.chat_id);
       
       if (response.case_id) {
@@ -147,8 +200,25 @@ const DashboardChat: React.FC<DashboardChatProps> = ({ userId, onCaseUpdate }) =
     "I was injured in a slip and fall accident"
   ];
 
+  const handleNewChat = () => {
+    setMessages([]);
+    setCurrentChatId(null);
+    setCurrentCaseId(null);
+    onNewChat?.();
+  };
+
   return (
     <div className="flex flex-col h-screen bg-black">
+      {/* Header with New Chat button */}
+      <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-white">AI Assistant</h2>
+        <button
+          onClick={handleNewChat}
+          className="px-4 py-2 bg-[#8dff2d] text-black rounded-lg hover:bg-[#7be525] transition-colors font-medium text-sm"
+        >
+          + New Chat
+        </button>
+      </div>
      
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">

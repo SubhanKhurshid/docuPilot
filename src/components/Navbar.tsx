@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSubscription } from '../contexts/SubscriptionContext';
 import { UserIcon, LogOutIcon } from 'lucide-react';
-
+import { SignedIn } from '@clerk/clerk-react';
 const Navbar = () => {
   const { user, isAuthenticated, signOut } = useAuth();
   const { hasActiveSubscription } = useSubscription();
@@ -54,9 +54,11 @@ const Navbar = () => {
           <Link to="/" className="text-gray-300 hover:text-white transition-colors">
             Home
           </Link>
+          <SignedIn>
           <Link to="/dashboard" className="text-gray-300 hover:text-white transition-colors">
             Dashboard
           </Link>
+          </SignedIn>
           {!hasActiveSubscription && (
             <Link to="/pricing" className="text-gray-300 hover:text-white transition-colors">
               Pricing
@@ -146,6 +148,7 @@ const Navbar = () => {
             >
               Home
             </Link>
+            <SignedIn>
             <Link
               to="/dashboard"
               className="block text-gray-300 hover:text-white hover:bg-[#222222] transition-colors py-3 px-4 rounded-lg text-lg"
@@ -153,6 +156,7 @@ const Navbar = () => {
             >
               Dashboard
             </Link>
+            </SignedIn>
             {!hasActiveSubscription && (
               <Link
                 to="/pricing"

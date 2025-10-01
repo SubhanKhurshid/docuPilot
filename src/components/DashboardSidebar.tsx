@@ -2,10 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   MessageCircleIcon,
-  FileTextIcon,
   BarChart3Icon,
-  SettingsIcon,
-  LogOutIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   HomeIcon,
@@ -37,6 +34,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   activeChatId,
 }) => {
   const [expandedSection, setExpandedSection] = useState<string | null>('main');
+  const [expandedChats, setExpandedChats] = useState<boolean>(true);
 
   const mainTabs = [
     { id: 'dashboard', label: 'Dashboard', icon: HomeIcon },
@@ -127,48 +125,47 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             </div>
           )}
 
-          {/* Chat History Section */}
-          {activeTab === 'chat' && !isCollapsed && (
+          {/* Chat History Section - Always visible */}
+          {!isCollapsed && chatHistory.length > 0 && (
             <div className="mb-4">
               <button
-                onClick={() => toggleSection('chat')}
+                onClick={() => setExpandedChats(!expandedChats)}
                 className="flex items-center justify-between w-full px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-800 rounded-lg transition-colors"
               >
-                <span>Recent Chats</span>
+                <div className="flex items-center gap-2">
+                  <HistoryIcon className="h-4 w-4" />
+                  <span>Recent Chats</span>
+                </div>
                 <ChevronRightIcon
                   className={`h-4 w-4 transition-transform ${
-                    expandedSection === 'chat' ? 'rotate-90' : ''
+                    expandedChats ? 'rotate-90' : ''
                   }`}
                 />
               </button>
             </div>
           )}
 
-          {expandedSection === 'chat' && !isCollapsed && (
+          {expandedChats && !isCollapsed && chatHistory.length > 0 && (
             <div className="space-y-1 mb-4 max-h-64 overflow-y-auto">
-              {chatHistory.length > 0 ? (
-                chatHistory.map((chat) => (
-                  <button
-                    key={chat.id}
-                    onClick={() => onChatSelect(chat.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all text-left ${
-                      activeChatId === chat.id
-                        ? 'bg-[#8dff2d] text-black border border-[#8dff2d]'
-                        : 'text-gray-400 hover:bg-gray-800'
-                    }`}
-                  >
-                    <MessageCircleIcon className="h-4 w-4 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="truncate font-medium">{chat.title}</div>
-                      <div className="text-xs text-gray-500">{chat.timestamp}</div>
+              {chatHistory.map((chat) => (
+                <button
+                  key={chat.id}
+                  onClick={() => onChatSelect(chat.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-all text-left ${
+                    activeChatId === chat.id
+                      ? 'bg-[#8dff2d] text-black border border-[#8dff2d]'
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
+                  }`}
+                >
+                  <MessageCircleIcon className="h-4 w-4 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate font-medium">{chat.title}</div>
+                    <div className={`text-xs ${activeChatId === chat.id ? 'text-black/70' : 'text-gray-500'}`}>
+                      {chat.timestamp}
                     </div>
-                  </button>
-                ))
-              ) : (
-                <div className="px-3 py-2 text-sm text-gray-500">
-                  No chat history
-                </div>
-              )}
+                  </div>
+                </button>
+              ))}
             </div>
           )}
 
