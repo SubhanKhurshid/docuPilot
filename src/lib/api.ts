@@ -1,5 +1,6 @@
 // API client for DocuPilot backend integration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_FALLBACK_URL = (import.meta as any).env?.VITE_API_FALLBACK_URL || 'https://docupilot-backend.onrender.com';
 
 export interface ChatRequest {
   clerk_user_id: string;
@@ -97,35 +98,102 @@ export interface CompleteSubscriptionRequest {
 
 class ApiClient {
   private baseUrl: string;
+  private fallbackUrl: string;
+  private isPrimaryAvailable: boolean | null = null;
 
   constructor() {
     this.baseUrl = API_BASE_URL;
+    this.fallbackUrl = API_FALLBACK_URL;
+  }
+
+  private async checkUrlHealth(url: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${url}/health`, {
+        method: 'GET',
+        timeout: 5000, // 5 second timeout
+      } as RequestInit);
+      return response.ok;
+    } catch (error) {
+      console.warn(`Health check failed for ${url}:`, error);
+      return false;
+    }
+  }
+
+  private async getAvailableUrl(): Promise<string> {
+    // If we already know the primary is available, use it
+    if (this.isPrimaryAvailable === true) {
+      return this.baseUrl;
+    }
+
+    // If we already know the primary is not available, use fallback
+    if (this.isPrimaryAvailable === false) {
+      return this.fallbackUrl;
+    }
+
+    // Check primary URL first
+    const isPrimaryHealthy = await this.checkUrlHealth(this.baseUrl);
+    
+    if (isPrimaryHealthy) {
+      this.isPrimaryAvailable = true;
+      return this.baseUrl;
+    } else {
+      this.isPrimaryAvailable = false;
+      console.warn(`Primary API (${this.baseUrl}) is not available, using fallback (${this.fallbackUrl})`);
+      return this.fallbackUrl;
+    }
   }
 
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
+    const baseUrl = await this.getAvailableUrl();
+    const url = `${baseUrl}${endpoint}`;
     
     const defaultHeaders = {
       'Content-Type': 'application/json',
     };
 
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
-    });
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          ...defaultHeaders,
+          ...options.headers,
+        },
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      // If the request fails and we're using the primary URL, try fallback
+      if (baseUrl === this.baseUrl && this.isPrimaryAvailable !== false) {
+        console.warn(`Request to primary API failed, retrying with fallback: ${error}`);
+        this.isPrimaryAvailable = false;
+        const fallbackUrl = `${this.fallbackUrl}${endpoint}`;
+        
+        const response = await fetch(fallbackUrl, {
+          ...options,
+          headers: {
+            ...defaultHeaders,
+            ...options.headers,
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+        }
+
+        return response.json();
+      }
+      
+      throw error;
     }
-
-    return response.json();
   }
 
   // Chat API
@@ -236,6 +304,16 @@ class ApiClient {
 
   async getChatMessages(chatId: string) {
     return this.request(`/api/chat/${chatId}/messages`);
+  }
+
+  // Utility method to reset URL availability check
+  resetUrlAvailability() {
+    this.isPrimaryAvailable = null;
+  }
+
+  // Method to get current API URL being used
+  getCurrentApiUrl(): string {
+    return this.isPrimaryAvailable === false ? this.fallbackUrl : this.baseUrl;
   }
 }
 
