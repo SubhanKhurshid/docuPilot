@@ -11,6 +11,7 @@ import {
   PaperclipIcon,
 } from 'lucide-react';
 import { apiClient, ChatRequest, ChatResponse } from '../lib/api';
+import SectionMessage from './SectionMessage';
 
 interface Message {
   id: string;
@@ -23,6 +24,8 @@ interface Message {
     required_docs?: string[];
     completed_docs?: string[];
     is_new_case?: boolean;
+    case_information_completion?: number;
+    next_questions?: any[];
   };
 }
 
@@ -56,7 +59,7 @@ const DashboardChat: React.FC<DashboardChatProps> = ({
         try {
           setIsLoading(true);
           const response = await apiClient.getChatMessages(activeChatId) as { 
-            messages: Array<{ id: string; content: string; chat_id: string; timestamp: string }> 
+            messages: Array<{ id: string; content: string; chat_id: string; timestamp: string; type: string }> 
           };
           
           if (response.messages && response.messages.length > 0) {
@@ -65,10 +68,11 @@ const DashboardChat: React.FC<DashboardChatProps> = ({
               content: string; 
               chat_id: string; 
               timestamp: string;
+              type: string;
             }) => ({
               id: msg.id,
               content: msg.content,
-              isUser: true,
+              isUser: msg.type === 'user', // Use the type field from backend
               timestamp: new Date(msg.timestamp),
             }));
             setMessages(loadedMessages);
@@ -84,6 +88,17 @@ const DashboardChat: React.FC<DashboardChatProps> = ({
 
     loadChatMessages();
   }, [activeChatId, currentChatId]);
+
+  // Send welcome message on initial load if no messages exist
+  useEffect(() => {
+    if (messages.length === 0 && !isLoading && !activeChatId) {
+      // Small delay to ensure component is fully mounted
+      const timer = setTimeout(() => {
+        sendWelcomeMessage();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [messages.length, isLoading, activeChatId]);
 
 
   
@@ -127,6 +142,8 @@ const DashboardChat: React.FC<DashboardChatProps> = ({
           required_docs: response.required_docs,
           completed_docs: response.completed_docs,
           is_new_case: response.is_new_case,
+          case_information_completion: response.case_information_completion,
+          next_questions: response.next_questions,
         },
       };
 
@@ -205,6 +222,62 @@ const DashboardChat: React.FC<DashboardChatProps> = ({
     setCurrentChatId(null);
     setCurrentCaseId(null);
     onNewChat?.();
+    
+    // Automatically send welcome message to start the conversation
+    setTimeout(() => {
+      sendWelcomeMessage();
+    }, 500);
+  };
+
+  const sendWelcomeMessage = async () => {
+    setIsLoading(true);
+
+    try {
+      // Send a simple trigger message to get AI response
+      const request: ChatRequest = {
+        clerk_user_id: userId,
+        question: "Hello, I need help with my personal injury case.",
+        history: [],
+        chat_id: undefined,
+      };
+
+      const response: ChatResponse = await apiClient.sendMessage(request);
+      
+      const aiMessage: Message = {
+        id: Date.now().toString(),
+        content: response.response,
+        isUser: false,
+        timestamp: new Date(),
+        metadata: {
+          case_id: response.case_id,
+          case_status: response.case_status,
+          required_docs: response.required_docs,
+          completed_docs: response.completed_docs,
+          is_new_case: response.is_new_case,
+          case_information_completion: response.case_information_completion,
+          next_questions: response.next_questions,
+        },
+      };
+
+      setMessages(prev => [...prev, aiMessage]);
+      setCurrentChatId(response.chat_id);
+      
+      if (response.case_id) {
+        setCurrentCaseId(response.case_id);
+        onCaseUpdate?.(response.case_id, response.case_status || 'new');
+      }
+    } catch (error) {
+      console.error('Error sending welcome message:', error);
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        content: 'Welcome! I\'m DocuPilot AI, your personal injury case assistant. I\'m here to help you navigate your case from start to finish. Please describe your injury and how it happened so I can assist you.',
+        isUser: false,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -222,7 +295,7 @@ const DashboardChat: React.FC<DashboardChatProps> = ({
      
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {messages.length === 0 && (
+        {messages.length === 0 && !isLoading && (
           <div className="text-center py-12">
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
@@ -277,7 +350,11 @@ const DashboardChat: React.FC<DashboardChatProps> = ({
                       : 'bg-gray-800 text-white border border-gray-700'
                   }`}
                 >
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                  {message.isUser ? (
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                  ) : (
+                    <SectionMessage content={message.content} />
+                  )}
                 </div>
                 
                 {message.metadata && (
@@ -292,6 +369,30 @@ const DashboardChat: React.FC<DashboardChatProps> = ({
                           <span className="w-2 h-2 bg-green-400 rounded-full"></span>
                           New case created
                         </p>
+                      </motion.div>
+                    )}
+                    
+                    {message.metadata.case_information_completion !== undefined && message.metadata.case_information_completion !== null && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="px-4 py-3 bg-blue-900/50 border border-blue-700 rounded-lg"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-sm text-blue-300 font-medium flex items-center gap-2">
+                            <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                            Case Information Progress
+                          </p>
+                          <span className="text-sm text-blue-200 font-semibold">
+                            {message.metadata.case_information_completion.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-700 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-blue-400 to-blue-500 h-2 rounded-full transition-all duration-500"
+                            style={{ width: `${message.metadata.case_information_completion}%` }}
+                          ></div>
+                        </div>
                       </motion.div>
                     )}
                     

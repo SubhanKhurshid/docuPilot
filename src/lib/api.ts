@@ -17,6 +17,8 @@ export interface ChatResponse {
   required_docs?: string[];
   completed_docs?: string[];
   is_new_case: boolean;
+  case_information_completion?: number;
+  next_questions?: any[];
 }
 
 export interface DocumentUploadRequest {
