@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -8,54 +7,18 @@ import {
   FileTextIcon,
   BarChart3Icon,
   StarIcon,
-  SendIcon,
   SparklesIcon,
   TrendingUpIcon,
   BotIcon,
   DollarSignIcon
 } from 'lucide-react';
-import ChatBubble from '../components/ChatBubble';
 import { CircularProgress } from '../components/CircularProgress';
 import SettlementCalculator from '../components/SettlementCalculator';
 import { useSubscription } from '../contexts/SubscriptionContext';
+import HomePageChatbot from '../components/HomePageChatbot';
 
 const HomePage = () => {
   const { hasActiveSubscription } = useSubscription();
-  const [messages, setMessages] = useState([{
-    id: 1,
-    text: "Hello! I'm DocuPilot AI. I can help you maximize your personal injury settlement.",
-    isUser: false
-  }, {
-    id: 2,
-    text: 'Would you like to learn how our AI-powered platform works?',
-    isUser: false
-  }]);
-  const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputValue.trim()) return;
-
-    // Add user message
-    setMessages([...messages, {
-      id: Date.now(),
-      text: inputValue,
-      isUser: true
-    }]);
-    setInputValue('');
-    setIsTyping(true);
-
-    // Simulate AI response
-    setTimeout(() => {
-      setMessages(prev => [...prev, {
-        id: Date.now() + 1,
-        text: "Great! I can help you assess your claim value, generate legal documents, and guide you through the entire process. Let's get started with a free claim evaluation!",
-        isUser: false
-      }]);
-      setIsTyping(false);
-    }, 1500);
-  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -74,18 +37,7 @@ const HomePage = () => {
       y: 0,
       transition: {
         duration: 0.6,
-        ease: [0.25, 0.46, 0.45, 0.94]
-      }
-    }
-  };
-
-  const floatingVariants = {
-    animate: {
-      y: [-10, 10, -10],
-      transition: {
-        duration: 4,
-        repeat: Infinity,
-        ease: "easeInOut"
+        ease: "easeOut" as const
       }
     }
   };
@@ -256,7 +208,11 @@ const HomePage = () => {
                 </div>
 
                 {/* Right Side - Chatbot Interface */}
-             
+                <motion.div
+                  variants={itemVariants}
+                >
+                  <HomePageChatbot />
+                </motion.div>
               </div>
             </motion.div>
           </div>

@@ -1,5 +1,5 @@
 // API client for DocuPilot backend integration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8000';
 
 export interface ChatRequest {
   clerk_user_id: string;
@@ -93,6 +93,60 @@ export interface CompleteSubscriptionRequest {
   clerk_user_id: string;
   setup_intent_id: string;
   price_id: string;
+}
+
+export interface LeadCaptureRequest {
+  name: string;
+  email: string;
+  phone: string;
+  claim_type: string;
+  accident_date: string;
+  has_injuries: boolean;
+  injury_description?: string;
+}
+
+export interface LeadCaptureResponse {
+  success: boolean;
+  lead_id: string;
+  message: string;
+  claim_packet_ready: boolean;
+  download_url: string;
+}
+
+export interface HomePageChatRequest {
+  message: string;
+  session_id?: string;
+  context?: {
+    step?: number;
+    claim_type?: string;
+    action?: string;
+    has_injuries?: boolean;
+    accident_date?: string;
+    question_index?: number;
+    answers?: Record<string, string>;
+    skip_to_completion?: boolean;
+    lead_info?: {
+      name?: string;
+      email?: string;
+      phone?: string;
+    };
+    conversation_history?: Array<{
+      text: string;
+      isUser: boolean;
+    }>;
+    [key: string]: any;
+  };
+}
+
+export interface HomePageChatResponse {
+  response: string;
+  session_id: string;
+  next_step: number;
+  question_index?: number;
+  total_questions?: number;
+  answers?: Record<string, string>;
+  completed?: boolean;
+  category?: string;
 }
 
 class ApiClient {
@@ -236,6 +290,25 @@ class ApiClient {
 
   async getChatMessages(chatId: string) {
     return this.request(`/api/chat/${chatId}/messages`);
+  }
+
+  // Homepage Chatbot API (no authentication required)
+  async homePageChat(request: HomePageChatRequest): Promise<HomePageChatResponse> {
+    return this.request<HomePageChatResponse>('/api/homepage-chat', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async captureLead(request: LeadCaptureRequest): Promise<LeadCaptureResponse> {
+    return this.request<LeadCaptureResponse>('/api/capture-lead', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async downloadClaimPacket(leadId: string) {
+    return this.request(`/api/download-claim-packet/${leadId}`);
   }
 }
 
