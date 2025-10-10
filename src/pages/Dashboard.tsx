@@ -22,13 +22,14 @@ const Dashboard = () => {
     const fetchChatHistory = async () => {
       if (user) {
         try {
-          const response = await apiClient.getUserChats(user.id) as { chats: Array<{ id: string; title: string; timestamp: string }> };
-          if (response.chats && response.chats.length > 0) {
+          const response = await apiClient.getUserChatHistory(user.id);
+          if (response.success && response.chats && response.chats.length > 0) {
             // Format the chat history with relative timestamps
-            const formattedChats = response.chats.map((chat: { id: string; title: string; timestamp: string }) => ({
-              id: chat.id,
-              title: chat.title,
-              timestamp: formatTimestamp(chat.timestamp)
+            const formattedChats = response.chats.map((chat) => ({
+              id: chat.chat_id,
+              title: chat.chat_title,
+              timestamp: formatTimestamp(chat.created_at),
+              caseInfo: chat.case_info
             }));
             setChatHistory(formattedChats);
           }
@@ -166,6 +167,8 @@ const Dashboard = () => {
               userId={user.id}
               onCaseUpdate={handleCaseUpdate}
               activeChatId={activeChatId}
+              chatHistory={chatHistory}
+              onChatSelect={handleChatSelect}
               onNewChat={() => {
                 setActiveChatId(undefined);
                 setChatHistory(prev => [...prev]);

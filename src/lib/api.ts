@@ -117,7 +117,7 @@ export interface LeadCaptureResponse {
 
 export interface HomePageChatRequest {
   message: string;
-  session_id?: string;
+  clerk_user_id: string;  // Required - no more session_id
   context?: {
     step?: number;
     claim_type?: string;
@@ -142,13 +142,91 @@ export interface HomePageChatRequest {
 
 export interface HomePageChatResponse {
   response: string;
-  session_id: string;
   next_step: number;
   question_index?: number;
   total_questions?: number;
   answers?: Record<string, string>;
   completed?: boolean;
   category?: string;
+  collected_info?: {
+    claimType: string;
+    location: string;
+    accidentDate: string;
+    name: string;
+    email: string;
+    phone: string;
+  };
+  subscription_required?: boolean;
+  case_id?: string;
+  buttons?: Array<{
+    label: string;
+    value: string;
+  }>;
+  show_date_picker?: boolean;
+  show_input?: boolean;
+}
+
+export interface ConvertLeadToCaseRequest {
+  lead_id: string;
+  clerk_user_id: string;
+}
+
+export interface ConvertLeadToCaseResponse {
+  success: boolean;
+  case_id: string;
+  chat_id: string;
+  message: string;
+  lead: {
+    name: string;
+    email: string;
+    claim_type: string;
+    accident_date: string;
+  };
+}
+
+export interface ChatHistoryResponse {
+  success: boolean;
+  chats: Array<{
+    chat_id: string;
+    chat_title: string;
+    created_at: string;
+    messages: Array<{
+      message_id: string;
+      user_message: string;
+      ai_response?: string;
+      created_at: string;
+    }>;
+    case_info?: {
+      case_id: string;
+      injury: string;
+      status: string;
+    };
+  }>;
+}
+
+export interface ResumeChatResponse {
+  success: boolean;
+  chat: {
+    chat_id: string;
+    chat_title: string;
+    created_at: string;
+    messages: Array<{
+      message_id: string;
+      user_message: string;
+      ai_response?: string;
+      created_at: string;
+    }>;
+    case_info?: {
+      case_id: string;
+      injury: string;
+      status: string;
+    };
+  };
+}
+
+export interface GenerateClaimPacketFromCaseRequest {
+  case_id: string;
+  clerk_user_id: string;
 }
 
 class ApiClient {
@@ -311,6 +389,43 @@ class ApiClient {
 
   async downloadClaimPacket(leadId: string) {
     return this.request(`/api/download-claim-packet/${leadId}`);
+  }
+
+  // Lead Conversion API
+  async convertLeadToCase(request: ConvertLeadToCaseRequest): Promise<ConvertLeadToCaseResponse> {
+    return this.request<ConvertLeadToCaseResponse>('/api/convert-lead-to-case', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  // Chat History API
+  async getUserChatHistory(userId: string): Promise<ChatHistoryResponse> {
+    return this.request<ChatHistoryResponse>(`/api/user-chat-history/${userId}`);
+  }
+
+  async resumeChat(chatId: string, userId: string): Promise<ResumeChatResponse> {
+    return this.request<ResumeChatResponse>(`/api/resume-chat/${chatId}`, {
+      method: 'POST',
+      body: JSON.stringify({ clerk_user_id: userId }),
+    });
+  }
+
+  // Generate claim packet from case
+  async generateClaimPacketFromCase(request: GenerateClaimPacketFromCaseRequest): Promise<Blob> {
+    const response = await fetch(`${this.baseUrl}/api/generate-claim-packet-from-case`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response.blob();
   }
 }
 

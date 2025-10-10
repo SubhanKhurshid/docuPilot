@@ -9,6 +9,7 @@ import {
   MicIcon,
   MicOffIcon,
   PaperclipIcon,
+  ClockIcon,
 } from 'lucide-react';
 import { apiClient, ChatRequest, ChatResponse } from '../lib/api';
 import SectionMessage from './SectionMessage';
@@ -35,6 +36,17 @@ interface DashboardChatProps {
   activeChatId?: string;
   onNewChat?: () => void;
   onChatCreated?: (chatId: string, title: string) => void;
+  chatHistory?: Array<{
+    id: string;
+    title: string;
+    timestamp: string;
+    caseInfo?: {
+      case_id: string;
+      injury: string;
+      status: string;
+    };
+  }>;
+  onChatSelect?: (chatId: string) => void;
 }
 
 const DashboardChat: React.FC<DashboardChatProps> = ({ 
@@ -42,7 +54,9 @@ const DashboardChat: React.FC<DashboardChatProps> = ({
   onCaseUpdate,
   activeChatId,
   onNewChat,
-  onChatCreated
+  onChatCreated,
+  chatHistory = [],
+  onChatSelect
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -50,6 +64,9 @@ const DashboardChat: React.FC<DashboardChatProps> = ({
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [currentCaseId, setCurrentCaseId] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [isGeneratingPacket, setIsGeneratingPacket] = useState(false);
+  const [showChatHistory, setShowChatHistory] = useState(false);
+  const [caseCompletionPercentage, setCaseCompletionPercentage] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Load chat messages when activeChatId changes
@@ -58,25 +75,47 @@ const DashboardChat: React.FC<DashboardChatProps> = ({
       if (activeChatId && activeChatId !== currentChatId) {
         try {
           setIsLoading(true);
-          const response = await apiClient.getChatMessages(activeChatId) as { 
-            messages: Array<{ id: string; content: string; chat_id: string; timestamp: string; type: string }> 
-          };
+          const response = await apiClient.resumeChat(activeChatId, userId);
           
-          if (response.messages && response.messages.length > 0) {
-            const loadedMessages: Message[] = response.messages.map((msg: { 
-              id: string; 
-              content: string; 
-              chat_id: string; 
-              timestamp: string;
-              type: string;
-            }) => ({
-              id: msg.id,
-              content: msg.content,
-              isUser: msg.type === 'user', // Use the type field from backend
-              timestamp: new Date(msg.timestamp),
-            }));
-            setMessages(loadedMessages);
+          if (response.success && response.chat.messages && response.chat.messages.length > 0) {
+            // Add AI responses as separate messages
+            const allMessages: Message[] = [];
+            response.chat.messages.forEach((msg) => {
+              // Add AI response first (if it exists)
+              if (msg.ai_response) {
+                allMessages.push({
+                  id: `${msg.message_id}_ai`,
+                  content: msg.ai_response,
+                  isUser: false,
+                  timestamp: new Date(msg.created_at),
+                });
+              }
+              
+              // Add user message second
+              allMessages.push({
+                id: msg.message_id,
+                content: msg.user_message,
+                isUser: true,
+                timestamp: new Date(msg.created_at),
+              });
+            });
+            
+            setMessages(allMessages);
             setCurrentChatId(activeChatId);
+            
+            // Set case ID if available
+            if (response.chat.case_info) {
+              setCurrentCaseId(response.chat.case_info.case_id);
+              // Calculate completion percentage based on case status
+              const status = response.chat.case_info.status;
+              if (status === 'completed') {
+                setCaseCompletionPercentage(100);
+              } else if (status === 'in_progress') {
+                setCaseCompletionPercentage(75);
+              } else {
+                setCaseCompletionPercentage(25);
+              }
+            }
           }
         } catch (error) {
           console.error('Error loading chat messages:', error);
@@ -87,7 +126,7 @@ const DashboardChat: React.FC<DashboardChatProps> = ({
     };
 
     loadChatMessages();
-  }, [activeChatId, currentChatId]);
+  }, [activeChatId, currentChatId, userId]);
 
   // Send welcome message on initial load if no messages exist
   useEffect(() => {
@@ -100,8 +139,48 @@ const DashboardChat: React.FC<DashboardChatProps> = ({
     }
   }, [messages.length, isLoading, activeChatId]);
 
+  const handleGenerateClaimPacket = async () => {
+    if (!currentCaseId || !userId || isGeneratingPacket) return;
 
-  
+    setIsGeneratingPacket(true);
+    try {
+      const blob = await apiClient.generateClaimPacketFromCase({
+        case_id: currentCaseId,
+        clerk_user_id: userId
+      });
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Claim_Packet_${currentCaseId.slice(0, 8)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      // Show success message
+      const successMsg: Message = {
+        id: Date.now().toString(),
+        content: "🎉 Your claim packet has been generated and downloaded successfully! You can also find it in your Documents section.",
+        isUser: false,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, successMsg]);
+
+    } catch (error) {
+      console.error('Error generating claim packet:', error);
+      const errorMsg: Message = {
+        id: Date.now().toString(),
+        content: "Sorry, I encountered an error generating your claim packet. Please try again or contact support.",
+        isUser: false,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMsg]);
+    } finally {
+      setIsGeneratingPacket(false);
+    }
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,6 +239,17 @@ const DashboardChat: React.FC<DashboardChatProps> = ({
       if (response.case_id) {
         setCurrentCaseId(response.case_id);
         onCaseUpdate?.(response.case_id, response.case_status || 'new');
+        
+        // Update completion percentage based on case information completion
+        if (response.case_information_completion !== undefined) {
+          setCaseCompletionPercentage(response.case_information_completion);
+        } else if (response.case_status === 'completed') {
+          setCaseCompletionPercentage(100);
+        } else if (response.case_status === 'in_progress') {
+          setCaseCompletionPercentage(75);
+        } else {
+          setCaseCompletionPercentage(25);
+        }
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -285,13 +375,58 @@ const DashboardChat: React.FC<DashboardChatProps> = ({
       {/* Header with New Chat button */}
       <div className="p-4 border-b border-gray-800 flex items-center justify-between">
         <h2 className="text-xl font-semibold text-white">AI Assistant</h2>
-        <button
-          onClick={handleNewChat}
-          className="px-4 py-2 bg-[#8dff2d] text-black rounded-lg hover:bg-[#7be525] transition-colors font-medium text-sm"
-        >
-          + New Chat
-        </button>
+        <div className="flex items-center gap-3">
+          {chatHistory.length > 0 && (
+            <button
+              onClick={() => setShowChatHistory(!showChatHistory)}
+              className="flex items-center gap-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors text-sm text-gray-300"
+            >
+              <ClockIcon className="h-4 w-4" />
+              History ({chatHistory.length})
+            </button>
+          )}
+          <button
+            onClick={handleNewChat}
+            className="px-4 py-2 bg-[#8dff2d] text-black rounded-lg hover:bg-[#7be525] transition-colors font-medium text-sm"
+          >
+            + New Chat
+          </button>
+        </div>
       </div>
+
+      {/* Chat History Section */}
+      {showChatHistory && chatHistory.length > 0 && (
+        <div className="border-b border-gray-800 bg-gray-800 max-h-48 overflow-y-auto">
+          <div className="p-4">
+            <h3 className="text-sm font-semibold text-gray-300 mb-3">Previous Conversations</h3>
+            <div className="space-y-2">
+              {chatHistory.map((chat) => (
+                <button
+                  key={chat.id}
+                  onClick={() => onChatSelect?.(chat.id)}
+                  className={`w-full text-left p-3 rounded-lg transition-colors ${
+                    activeChatId === chat.id 
+                      ? 'bg-[#8dff2d] text-black' 
+                      : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm truncate">{chat.title}</p>
+                      <p className="text-xs opacity-75">{chat.timestamp}</p>
+                    </div>
+                    {chat.caseInfo && (
+                      <div className="text-xs opacity-75">
+                        {chat.caseInfo.status === 'completed' ? '✅' : '⏳'}
+                      </div>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
      
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -472,6 +607,46 @@ const DashboardChat: React.FC<DashboardChatProps> = ({
 
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Generate Claim Packet Button - Only show when 100% complete */}
+      {currentCaseId && caseCompletionPercentage >= 100 && (
+        <div className="p-4 border-t border-gray-800 bg-gray-900">
+          <motion.button
+            onClick={handleGenerateClaimPacket}
+            disabled={isGeneratingPacket}
+            className="w-full px-6 py-3 bg-gradient-to-r from-[#8dff2d] to-[#7be525] text-black rounded-xl hover:from-[#7be525] hover:to-[#6dd11a] transition-all font-semibold shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            {isGeneratingPacket ? (
+              <>
+                <LoaderIcon className="h-5 w-5 animate-spin" />
+                Generating Claim Packet...
+              </>
+            ) : (
+              <>
+                <SparklesIcon className="h-5 w-5" />
+                Generate Professional Claim Packet
+              </>
+            )}
+          </motion.button>
+        </div>
+      )}
+
+      {/* Progress Indicator - Show when not 100% complete */}
+      {currentCaseId && caseCompletionPercentage < 100 && (
+        <div className="p-4 border-t border-gray-800 bg-gray-900">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="w-4 h-4 bg-yellow-500 rounded-full animate-pulse"></div>
+              <span className="text-sm text-gray-300">Case Progress: {caseCompletionPercentage}%</span>
+            </div>
+            <p className="text-xs text-gray-400">
+              Complete all required information to generate your claim packet
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Input */}
       <div className="p-6 border-t border-gray-800 bg-gray-900">

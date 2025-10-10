@@ -234,11 +234,11 @@ const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onCaseUpdate }) =
                           <div className="flex-1 bg-gray-700 rounded-full h-2">
                             <div
                               className="bg-[#8dff2d] h-2 rounded-full transition-all duration-300"
-                              style={{ width: `${case_.progress_percentage}%` }}
+                              style={{ width: `${case_.progress_percentage || 0}%` }}
                             />
                           </div>
                           <span className="text-sm font-medium text-white">
-                            {Math.round(case_.progress_percentage)}%
+                            {Math.round(case_.progress_percentage || 0)}%
                           </span>
                         </div>
                       </div>
