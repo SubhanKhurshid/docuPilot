@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from '../contexts/AuthContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
+import PaymentModal from '../components/PaymentModal';
 import {
   ArrowRightIcon,
-  CheckIcon,
   ChevronDownIcon,
   ChevronUpIcon,
   ShieldCheckIcon,
@@ -18,7 +20,18 @@ import {
 } from 'lucide-react';
 
 const Pricing = () => {
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState<number[]>([]);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const { hasActiveSubscription, isLoading } = useSubscription();
+
+  // Redirect users with active subscription to dashboard
+  useEffect(() => {
+    if (isAuthenticated && !isLoading && hasActiveSubscription) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, hasActiveSubscription, isLoading, navigate]);
 
   const toggleFaq = (index: number) => {
     setOpenFaq(prev =>
@@ -27,6 +40,28 @@ const Pricing = () => {
         : [...prev, index]
     );
   };
+
+  const handleGetStarted = () => {
+    if (!isAuthenticated) {
+      navigate('/signup');
+      return;
+    }
+    if (hasActiveSubscription) {
+      navigate('/dashboard');
+      return;
+    }
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentSuccess = () => {
+    setShowPaymentModal(false);
+    navigate('/dashboard');
+  };
+
+  const handlePaymentCancel = () => {
+    setShowPaymentModal(false);
+  };
+
 
   const features = [
     {
@@ -139,6 +174,7 @@ const Pricing = () => {
       }
     }
   };
+
 
   return (
     <div className="relative min-h-screen bg-[#111111] overflow-hidden">
@@ -300,7 +336,7 @@ const Pricing = () => {
                       transition={{ duration: 0.6, delay: 0.2 }}
                       viewport={{ once: true }}
                     >
-                      $197
+                      $167
                     </motion.div>
                     <div className="text-gray-300 font-normal">per year</div>
                     <div className="text-sm text-[#8dff2d] mt-2 font-medium">Save 67% vs. lawyer fees</div>
@@ -328,11 +364,11 @@ const Pricing = () => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <Link
-                      to="/signup"
+                    <button
+                      onClick={handleGetStarted}
                       className="group block w-full text-center px-8 py-4 rounded-full bg-[#8dff2d] text-black font-semibold text-lg hover:bg-[#7be525] transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20"
                     >
-                      Start Free Trial
+                      {hasActiveSubscription ? 'Go to Dashboard' : 'Start Free Trial'}
                       <motion.div
                         className="ml-2 inline-block"
                         animate={{ x: [0, 4, 0] }}
@@ -340,11 +376,14 @@ const Pricing = () => {
                       >
                         <ArrowRightIcon className="h-5 w-5 inline" />
                       </motion.div>
-                    </Link>
+                    </button>
                   </motion.div>
 
                   <p className="text-center text-sm text-gray-400 mt-6 font-normal">
-                    7-day free trial • No credit card required • Cancel anytime
+                    {hasActiveSubscription 
+                      ? 'You already have an active subscription' 
+                      : '7-day free trial • No credit card required • Cancel anytime'
+                    }
                   </p>
                 </div>
               </div>
@@ -475,19 +514,35 @@ const Pricing = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Link
-                    to="/signup"
-                    className="group inline-flex items-center px-8 py-4 rounded-full bg-[#8dff2d] text-black font-semibold text-lg hover:bg-[#7be525] transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20"
-                  >
-                    Start Your Free Trial
-                    <motion.div
-                      className="ml-2"
-                      animate={{ x: [0, 4, 0] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
+                  {hasActiveSubscription ? (
+                    <Link
+                      to="/dashboard"
+                      className="group inline-flex items-center px-8 py-4 rounded-full bg-[#8dff2d] text-black font-semibold text-lg hover:bg-[#7be525] transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20"
                     >
-                      <ArrowRightIcon className="h-5 w-5" />
-                    </motion.div>
-                  </Link>
+                      Go to Dashboard
+                      <motion.div
+                        className="ml-2"
+                        animate={{ x: [0, 4, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      >
+                        <ArrowRightIcon className="h-5 w-5" />
+                      </motion.div>
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/signup"
+                      className="group inline-flex items-center px-8 py-4 rounded-full bg-[#8dff2d] text-black font-semibold text-lg hover:bg-[#7be525] transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20"
+                    >
+                      Start Your Free Trial
+                      <motion.div
+                        className="ml-2"
+                        animate={{ x: [0, 4, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      >
+                        <ArrowRightIcon className="h-5 w-5" />
+                      </motion.div>
+                    </Link>
+                  )}
                 </motion.div>
                 <motion.div
                   whileHover={{ scale: 1.02 }}
@@ -503,12 +558,24 @@ const Pricing = () => {
               </div>
 
               <p className="text-sm text-gray-400 font-normal">
-                No credit card required • 7-day free trial • Cancel anytime
+                {hasActiveSubscription 
+                  ? 'You already have an active subscription' 
+                  : ' • 7-day free trial • Cancel anytime'
+                }
               </p>
             </motion.div>
           </div>
         </section>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={handlePaymentCancel}
+        onSuccess={handlePaymentSuccess}
+        userEmail={user?.email || ''}
+        userId={user?.id || ''}
+      />
     </div>
   );
 };

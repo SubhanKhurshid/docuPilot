@@ -1,12 +1,40 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-
+import { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
+import { UserIcon, LogOutIcon } from 'lucide-react';
+import { SignedIn } from '@clerk/clerk-react';
 const Navbar = () => {
+  const { user, isAuthenticated, signOut } = useAuth();
+  const { hasActiveSubscription } = useSubscription();
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+  const handleLogout = () => {
+    signOut();
+    navigate('/');
+    setShowUserMenu(false);
+  };
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <nav className="w-full px-6 py-4 bg-[#111111] border-b border-[#222222] relative">
@@ -26,22 +54,74 @@ const Navbar = () => {
           <Link to="/" className="text-gray-300 hover:text-white transition-colors">
             Home
           </Link>
+          <SignedIn>
           <Link to="/dashboard" className="text-gray-300 hover:text-white transition-colors">
             Dashboard
           </Link>
-          <Link to="/pricing" className="text-gray-300 hover:text-white transition-colors">
-            Pricing
-          </Link>
+          </SignedIn>
+          {!hasActiveSubscription && (
+            <Link to="/pricing" className="text-gray-300 hover:text-white transition-colors">
+              Pricing
+            </Link>
+          )}
         </div>
 
         {/* Desktop Auth Buttons */}
         <div className="hidden md:flex items-center gap-4">
-          <Link to="/login" className="px-4 py-2 rounded-full bg-[#222222] text-white hover:bg-[#333333] transition-colors">
-            Login
-          </Link>
-          <Link to="/signup" className="px-4 py-2 rounded-full bg-[#8dff2d] text-black font-medium hover:bg-[#7be525] transition-colors">
-            Signup
-          </Link>
+          {isAuthenticated ? (
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#222222] text-white hover:bg-[#333333] transition-colors"
+              >
+                {user?.imageUrl ? (
+                  <img
+                    src={user.imageUrl}
+                    alt="User"
+                    className="w-8 h-8 rounded-full"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-[#8dff2d] flex items-center justify-center">
+                    <UserIcon className="h-5 w-5 text-black" />
+                  </div>
+                )}
+                <span>{user?.firstName || user?.email}</span>
+              </button>
+              
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-[#222222] rounded-lg shadow-lg border border-[#333333] z-50">
+                  <div className="py-2">
+                    <div className="px-4 py-2 text-sm text-gray-300 border-b border-[#333333]">
+                      {user?.email}
+                    </div>
+                    <Link
+                      to="/dashboard"
+                      className="block px-4 py-2 text-white hover:bg-[#333333] transition-colors"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      Dashboard
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-white hover:bg-[#333333] transition-colors flex items-center gap-2"
+                    >
+                      <LogOutIcon className="h-4 w-4" />
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <Link to="/login" className="px-4 py-2 rounded-full bg-[#222222] text-white hover:bg-[#333333] transition-colors">
+                Login
+              </Link>
+              <Link to="/signup" className="px-4 py-2 rounded-full bg-[#8dff2d] text-black font-medium hover:bg-[#7be525] transition-colors">
+                Signup
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Hamburger Button */}
@@ -68,6 +148,7 @@ const Navbar = () => {
             >
               Home
             </Link>
+            <SignedIn>
             <Link
               to="/dashboard"
               className="block text-gray-300 hover:text-white hover:bg-[#222222] transition-colors py-3 px-4 rounded-lg text-lg"
@@ -75,30 +156,60 @@ const Navbar = () => {
             >
               Dashboard
             </Link>
-            <Link
-              to="/pricing"
-              className="block text-gray-300 hover:text-white hover:bg-[#222222] transition-colors py-3 px-4 rounded-lg text-lg"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Pricing
-            </Link>
+            </SignedIn>
+            {!hasActiveSubscription && (
+              <Link
+                to="/pricing"
+                className="block text-gray-300 hover:text-white hover:bg-[#222222] transition-colors py-3 px-4 rounded-lg text-lg"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Pricing
+              </Link>
+            )}
 
             {/* Mobile Auth Buttons */}
             <div className="flex flex-col gap-3 pt-6 border-t border-[#333333]">
-              <Link
-                to="/login"
-                className="px-6 py-3 rounded-full bg-[#222222] text-white hover:bg-[#333333] transition-colors text-center text-lg font-medium"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Login
-              </Link>
-              <Link
-                to="/signup"
-                className="px-6 py-3 rounded-full bg-[#8dff2d] text-black font-medium hover:bg-[#7be525] transition-colors text-center text-lg"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Get Started
-              </Link>
+              {isAuthenticated ? (
+                <>
+                  <div className="px-4 py-2 text-sm text-gray-300">
+                    {user?.email}
+                  </div>
+                  <Link
+                    to="/dashboard"
+                    className="px-6 py-3 rounded-full bg-[#8dff2d] text-black font-medium hover:bg-[#7be525] transition-colors text-center text-lg"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="px-6 py-3 rounded-full bg-[#222222] text-white hover:bg-[#333333] transition-colors text-center text-lg font-medium flex items-center justify-center gap-2"
+                  >
+                    <LogOutIcon className="h-5 w-5" />
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="px-6 py-3 rounded-full bg-[#222222] text-white hover:bg-[#333333] transition-colors text-center text-lg font-medium"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="px-6 py-3 rounded-full bg-[#8dff2d] text-black font-medium hover:bg-[#7be525] transition-colors text-center text-lg"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

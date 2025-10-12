@@ -1,61 +1,24 @@
-import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowRightIcon,
   CheckIcon,
   ShieldCheckIcon,
-  ClockIcon,
   FileTextIcon,
   BarChart3Icon,
   StarIcon,
-  PlayIcon,
-  SendIcon,
   SparklesIcon,
   TrendingUpIcon,
-  UsersIcon,
   BotIcon,
   DollarSignIcon
 } from 'lucide-react';
-import ChatBubble from '../components/ChatBubble';
 import { CircularProgress } from '../components/CircularProgress';
 import SettlementCalculator from '../components/SettlementCalculator';
+import { useSubscription } from '../contexts/SubscriptionContext';
+import FloatingChatButton from '../components/FloatingChatButton';
+
 const HomePage = () => {
-  const [messages, setMessages] = useState([{
-    id: 1,
-    text: "Hello! I'm DocuPilot AI. I can help you maximize your personal injury settlement.",
-    isUser: false
-  }, {
-    id: 2,
-    text: 'Would you like to learn how our AI-powered platform works?',
-    isUser: false
-  }]);
-  const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputValue.trim()) return;
-
-    // Add user message
-    setMessages([...messages, {
-      id: Date.now(),
-      text: inputValue,
-      isUser: true
-    }]);
-    setInputValue('');
-    setIsTyping(true);
-
-    // Simulate AI response
-    setTimeout(() => {
-      setMessages(prev => [...prev, {
-        id: Date.now() + 1,
-        text: "Great! I can help you assess your claim value, generate legal documents, and guide you through the entire process. Let's get started with a free claim evaluation!",
-        isUser: false
-      }]);
-      setIsTyping(false);
-    }, 1500);
-  };
+  const { hasActiveSubscription } = useSubscription();
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -74,18 +37,7 @@ const HomePage = () => {
       y: 0,
       transition: {
         duration: 0.6,
-        ease: [0.25, 0.46, 0.45, 0.94]
-      }
-    }
-  };
-
-  const floatingVariants = {
-    animate: {
-      y: [-10, 10, -10],
-      transition: {
-        duration: 4,
-        repeat: Infinity,
-        ease: "easeInOut"
+        ease: "easeOut" as const
       }
     }
   };
@@ -168,186 +120,109 @@ const HomePage = () => {
               initial="hidden"
               animate="visible"
             >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                {/* Left Side - Content */}
-                <div className="text-left">
-                  <motion.div
-                    className="inline-flex items-center gap-3 px-4 py-2 mb-8 rounded-full border border-[#333333] bg-[#111111]/80 backdrop-blur-sm"
-                    variants={itemVariants}
-                  >
-                    <motion.div
-                      className="w-2 h-2 bg-[#8dff2d] rounded-full"
-                      animate={{
-                        scale: [1, 1.2, 1],
-                        opacity: [0.7, 1, 0.7]
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }}
-                    />
-                    <span className="text-sm text-gray-300 font-medium">AI-Powered Injury Solutions</span>
-                    <SparklesIcon className="h-4 w-4 text-[#8dff2d]" />
-                  </motion.div>
-
-                  <motion.h1
-                    className="text-5xl md:text-7xl font-semibold mb-8 leading-tight tracking-tight"
-                    variants={itemVariants}
-                  >
-                    <span className="text-white">Your case,</span>
-                    <br />
-                    <span className="text-white">your settlement—</span>
-                    <br />
-                    <span className="text-[#8dff2d] font-medium">AI powered</span>
-                  </motion.h1>
-
-                  <motion.p
-                    className="text-xl text-gray-300 mb-12 leading-relaxed font-normal max-w-2xl"
-                    variants={itemVariants}
-                  >
-                    Maximize your personal injury settlements with expert AI guidance, customizable documents, and step-by-step instructions.
-                    <span className="text-[#8dff2d] font-semibold"> Keep 100% of your settlement.</span>
-                  </motion.p>
-
-                  <motion.div
-                    className="flex flex-col sm:flex-row gap-4 mb-12"
-                    variants={itemVariants}
-                  >
-                    <motion.div
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <Link
-                        to="/signup"
-                        className="group inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-[#8dff2d] text-black font-semibold text-base sm:text-lg hover:bg-[#7be525] transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20 w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]"
-                      >
-                        Start Free Assessment
-                        <motion.div
-                          className="ml-2"
-                          animate={{ x: [0, 4, 0] }}
-                          transition={{ duration: 1.5, repeat: Infinity }}
-                        >
-                          <ArrowRightIcon className="h-5 w-5" />
-                        </motion.div>
-                      </Link>
-                    </motion.div>
-
-                    <motion.button
-                      className="border-[#8dff2d] group inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full border border-[#333333] text-white font-semibold text-base sm:text-lg hover:border-[#8dff2d] hover:bg-[#8dff2d]/5 transition-all duration-300 w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <PlayIcon className="mr-2 h-5 w-5" />
-                      Watch Demo
-                    </motion.button>
-                  </motion.div>
-
-                  <motion.div
-                    className="flex flex-wrap items-center gap-6 text-sm text-gray-400"
-                    variants={itemVariants}
-                  >
-                    <div className="flex items-center gap-2">
-                      <ShieldCheckIcon className="h-4 w-4 text-[#8dff2d]" />
-                      <span className="font-medium">HIPAA Compliant</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckIcon className="h-4 w-4 text-[#8dff2d]" />
-                      <span className="font-medium">No Legal Fees</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <StarIcon className="h-4 w-4 text-[#8dff2d] fill-current" />
-                      <span className="font-medium">4.9/5 Rating</span>
-                    </div>
-                  </motion.div>
-                </div>
-
-                {/* Right Side - Chatbot Interface */}
+              <div className="text-center max-w-4xl mx-auto">
                 <motion.div
-                  className="relative"
+                  className="inline-flex items-center gap-3 px-4 py-2 mb-8 rounded-full border border-[#333333] bg-[#111111]/80 backdrop-blur-sm"
                   variants={itemVariants}
-                  {...floatingVariants}
                 >
-                  <div className="relative">
-                    {/* Glow Effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#8dff2d]/20 to-[#7be525]/20 rounded-3xl blur-xl" />
+                  <motion.div
+                    className="w-2 h-2 bg-[#8dff2d] rounded-full"
+                    animate={{
+                      scale: [1, 1.2, 1],
+                      opacity: [0.7, 1, 0.7]
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                  />
+                  <span className="text-sm text-gray-300 font-medium">AI-Powered Injury Solutions</span>
+                  <SparklesIcon className="h-4 w-4 text-[#8dff2d]" />
+                </motion.div>
 
-                    {/* Chatbot Container */}
-                    <div className="relative bg-[#0a0a0a]/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-[#333333]/50 overflow-hidden">
-                      <div className="p-6 border-b border-[#333333]/50 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#8dff2d] to-[#7be525] flex items-center justify-center">
-                            <SparklesIcon className="h-5 w-5 text-black" />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-white">DocuPilot AI Assistant</h3>
-                            <p className="text-xs text-gray-400">Your Personal Injury Expert</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <motion.div
-                            className="h-2 w-2 rounded-full bg-[#8dff2d]"
-                            animate={{
-                              scale: [1, 1.2, 1],
-                              opacity: [0.7, 1, 0.7]
-                            }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              ease: "easeInOut"
-                            }}
-                          />
-                          <span className="text-xs text-gray-300 font-medium">Online</span>
-                        </div>
-                      </div>
+                <motion.h1
+                  className="text-5xl md:text-7xl font-semibold mb-8 leading-tight tracking-tight"
+                  variants={itemVariants}
+                >
+                  <span className="text-white">Your case,</span>
+                  <br />
+                  <span className="text-white">your settlement—</span>
+                  <br />
+                  <span className="text-[#8dff2d] font-medium">AI powered</span>
+                </motion.h1>
 
-                      <div className="h-80 overflow-y-auto p-6 flex flex-col gap-4 bg-gradient-to-b from-[#0a0a0a]/50 to-[#111111]/50">
-                        {messages.map(message => (
-                          <motion.div
-                            key={message.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <ChatBubble message={message.text} isUser={message.isUser} />
-                          </motion.div>
-                        ))}
-                        {isTyping && (
-                          <motion.div
-                            className="flex items-center gap-2 text-gray-400 ml-2"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                          >
-                            <div className="typing-indicator">
-                              <span></span>
-                              <span></span>
-                              <span></span>
-                            </div>
-                            <span className="text-sm font-medium">DocuPilot is analyzing...</span>
-                          </motion.div>
-                        )}
-                      </div>
+                <motion.p
+                  className="text-xl text-gray-300 mb-12 leading-relaxed font-normal max-w-3xl mx-auto"
+                  variants={itemVariants}
+                >
+                  Maximize your personal injury settlements with expert AI guidance, customizable documents, and step-by-step instructions.
+                  <span className="text-[#8dff2d] font-semibold"> Keep 100% of your settlement.</span>
+                </motion.p>
 
-                      <form onSubmit={handleSendMessage} className="p-6 border-t border-[#333333]/50 bg-[#0a0a0a]/80">
-                        <div className="flex gap-3">
-                          <input
-                            type="text"
-                            value={inputValue}
-                            onChange={e => setInputValue(e.target.value)}
-                            placeholder="Ask about your injury claim..."
-                            className="flex-1 bg-[#222222]/80 border border-[#333333] rounded-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#8dff2d] focus:border-transparent text-white placeholder-gray-400 font-medium"
-                          />
-                          <motion.button
-                            type="submit"
-                            className="p-3 rounded-full bg-[#8dff2d] text-black hover:bg-[#7be525] transition-colors shadow-lg"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            <SendIcon className="h-5 w-5" />
-                          </motion.button>
-                        </div>
-                      </form>
-                    </div>
+                <motion.div
+                  className="flex flex-col sm:flex-row gap-4 mb-12 justify-center"
+                  variants={itemVariants}
+                >
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Link
+                      to="/signup"
+                      className="group inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-[#8dff2d] text-black font-semibold text-base sm:text-lg hover:bg-[#7be525] transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20 w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]"
+                    >
+                      {hasActiveSubscription ? "Go to Dashboard" : "Start Free Assessment"}
+                      <motion.div
+                        className="ml-2"
+                        animate={{ x: [0, 4, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      >
+                        <ArrowRightIcon className="h-5 w-5" />
+                      </motion.div>
+                    </Link>
+                  </motion.div>
+                  
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <button
+                      onClick={() => {
+                        // Trigger the floating chatbot
+                        if ((window as any).triggerChatbot) {
+                          (window as any).triggerChatbot();
+                        }
+                      }}
+                      className="group inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full border border-[#8dff2d] text-[#8dff2d] font-semibold text-base sm:text-lg hover:bg-[#8dff2d] hover:text-black transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20 w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]"
+                    >
+                      Need help filing your claim?
+                      <motion.div
+                        className="ml-2"
+                        animate={{ rotate: [0, 10, -10, 0] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        <BotIcon className="h-5 w-5" />
+                      </motion.div>
+                    </button>
+                  </motion.div>
+                </motion.div>
+
+                <motion.div
+                  className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-400"
+                  variants={itemVariants}
+                >
+                  <div className="flex items-center gap-2">
+                    <ShieldCheckIcon className="h-4 w-4 text-[#8dff2d]" />
+                    <span className="font-medium">HIPAA Compliant</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckIcon className="h-4 w-4 text-[#8dff2d]" />
+                    <span className="font-medium">No Legal Fees</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <StarIcon className="h-4 w-4 text-[#8dff2d] fill-current" />
+                    <span className="font-medium">4.9/5 Rating</span>
                   </div>
                 </motion.div>
               </div>
@@ -645,7 +520,7 @@ const HomePage = () => {
                     to="/signup"
                     className="group inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-[#8dff2d] text-black font-semibold text-base sm:text-lg hover:bg-[#7be525] transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20 w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]"
                   >
-                    Start Free Trial
+                    {hasActiveSubscription ? "Go to Dashboard" : "Start Free Trial"}
                     <motion.div
                       className="ml-2"
                       animate={{ x: [0, 4, 0] }}
@@ -655,26 +530,34 @@ const HomePage = () => {
                     </motion.div>
                   </Link>
                 </motion.div>
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Link
-                    to="/pricing"
-                    className="border-[#8dff2d] inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full border border-[#333333] text-white font-semibold text-base sm:text-lg hover:border-[#8dff2d] hover:bg-[#8dff2d]/5 transition-all duration-300 w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]"
+                {!hasActiveSubscription && (
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    View Pricing
-                  </Link>
-                </motion.div>
+                    <Link
+                      to="/pricing"
+                      className="border-[#8dff2d] inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full border border-[#333333] text-white font-semibold text-base sm:text-lg hover:border-[#8dff2d] hover:bg-[#8dff2d]/5 transition-all duration-300 w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]"
+                    >
+                      View Pricing
+                    </Link>
+                  </motion.div>
+                )}
               </div>
 
               <p className="text-sm text-gray-400 font-normal">
-                No credit card required • 7-day free trial • Cancel anytime
+                {hasActiveSubscription 
+                  ? "You have an active subscription" 
+                  : "No credit card required • 7-day free trial • Cancel anytime"
+                }
               </p>
             </motion.div>
           </div>
         </section>
       </div>
+
+      {/* Floating Chat Button */}
+      <FloatingChatButton />
     </div>
   );
 };
