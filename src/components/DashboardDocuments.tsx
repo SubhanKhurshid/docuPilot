@@ -11,7 +11,11 @@ import {
   FileIcon,
   ImageIcon,
   FileSpreadsheetIcon,
+  PlusIcon,
+  MailIcon,
 } from 'lucide-react';
+import { apiClient, CaseDocument, GenerateDocumentRequest } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Document {
   id: string;
@@ -23,60 +27,114 @@ interface Document {
   ai_analysis?: any;
 }
 
-interface DashboardDocumentsProps {
-  userId: string;
+interface Case {
+  id: string;
+  injury_name: string;
+  status: string;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
-const DashboardDocuments: React.FC<DashboardDocumentsProps> = ({ userId }) => {
+interface DashboardDocumentsProps {
+  userId: string;
+  currentCaseId?: string;
+}
+
+const DashboardDocuments: React.FC<DashboardDocumentsProps> = ({ userId, currentCaseId }) => {
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [caseDocuments, setCaseDocuments] = useState<CaseDocument[]>([]);
+  const [allCases, setAllCases] = useState<Case[]>([]);
+  const [selectedCaseId, setSelectedCaseId] = useState<string | undefined>(currentCaseId);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [isUploading, setIsUploading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     loadDocuments();
-  }, [userId]);
+    loadAllCases();
+    if (currentCaseId) {
+      loadCaseDocuments();
+    }
+  }, [userId, currentCaseId]);
+
+  useEffect(() => {
+    if (selectedCaseId) {
+      loadCaseDocuments();
+    }
+  }, [selectedCaseId]);
 
   const loadDocuments = async () => {
     try {
       setIsLoading(true);
-      // TODO: Replace with actual API call when document endpoints are available
-      // For now, using mock data but with real structure
-      setDocuments([
-        {
-          id: '1',
-          name: 'Medical Records - Dr. Smith.pdf',
-          type: 'pdf',
-          size: '2.3 MB',
-          uploaded_at: '2024-01-15',
-          status: 'analyzed',
-          ai_analysis: {
-            total_medical_costs: 15000,
-            injury_details: ['Fractured arm', 'Soft tissue damage'],
-          }
-        },
-        {
-          id: '2',
-          name: 'X-Ray Results.jpg',
-          type: 'image',
-          size: '1.8 MB',
-          uploaded_at: '2024-01-14',
-          status: 'analyzed',
-        },
-        {
-          id: '3',
-          name: 'Insurance Claim Form.pdf',
-          type: 'pdf',
-          size: '856 KB',
-          uploaded_at: '2024-01-13',
-          status: 'pending',
-        },
-      ]);
+      // Load user-uploaded documents (if any)
+      // For now, we'll focus on case-generated documents
+      setDocuments([]);
     } catch (error) {
       console.error('Error loading documents:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadAllCases = async () => {
+    if (!user) return;
+    
+    try {
+      const response = await apiClient.getUserCases(user.id) as { cases: Case[] };
+      setAllCases(response.cases);
+      
+      // If no case is selected, select the first one
+      if (!selectedCaseId && response.cases.length > 0) {
+        setSelectedCaseId(response.cases[0].id);
+      }
+    } catch (error) {
+      console.error('Error loading cases:', error);
+    }
+  };
+
+  const loadCaseDocuments = async () => {
+    if (!selectedCaseId || !user) return;
+    
+    try {
+      const response = await apiClient.getCaseDocuments(selectedCaseId, user.id);
+      setCaseDocuments(response.documents);
+    } catch (error) {
+      console.error('Error loading case documents:', error);
+    }
+  };
+
+  const handleGenerateDocument = async (documentType: 'claim_packet' | 'demand_letter') => {
+    if (!selectedCaseId || !user) return;
+    
+    setIsGenerating(true);
+    try {
+      const request: GenerateDocumentRequest = {
+        case_id: selectedCaseId,
+        document_type: documentType,
+        clerk_user_id: user.id
+      };
+      
+      const response = await apiClient.generateDocument(request);
+      
+      // Download the PDF
+      const link = document.createElement('a');
+      link.href = response.download_url;
+      link.download = response.document_name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Reload case documents
+      await loadCaseDocuments();
+      
+    } catch (error) {
+      console.error('Error generating document:', error);
+      alert('Error generating document. Please try again.');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -146,6 +204,32 @@ const DashboardDocuments: React.FC<DashboardDocumentsProps> = ({ userId }) => {
           <p className="text-gray-300">Manage and analyze your case documents</p>
         </div>
 
+        {/* Case Selection */}
+        {allCases.length > 0 && (
+          <div className="mb-6 p-4 bg-gray-900 rounded-xl border border-gray-700">
+            <h2 className="text-lg font-semibold text-white mb-3">Select Case</h2>
+            <div className="flex items-center gap-4">
+              <select
+                value={selectedCaseId || ''}
+                onChange={(e) => setSelectedCaseId(e.target.value)}
+                className="px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-[#8dff2d] focus:border-transparent min-w-[300px]"
+              >
+                <option value="">Select a case...</option>
+                {allCases.map((caseItem) => (
+                  <option key={caseItem.id} value={caseItem.id}>
+                    {caseItem.injury_name} - {caseItem.status}
+                  </option>
+                ))}
+              </select>
+              {selectedCaseId && (
+                <div className="text-sm text-gray-400">
+                  Case ID: {selectedCaseId}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Controls */}
         <div className="mb-8 flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
@@ -183,12 +267,128 @@ const DashboardDocuments: React.FC<DashboardDocumentsProps> = ({ userId }) => {
           </label>
         </div>
 
+        {/* Document Generation Section */}
+        {selectedCaseId && (
+          <div className="mb-8 p-6 bg-gradient-to-r from-[#8dff2d]/10 to-[#7be525]/10 border border-[#8dff2d]/20 rounded-xl">
+            <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+              <PlusIcon className="h-5 w-5 text-[#8dff2d]" />
+              Generate Case Documents
+            </h2>
+            <p className="text-gray-300 mb-6">
+              Generate professional documents for your case using the information you've provided.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <motion.button
+                onClick={() => handleGenerateDocument('claim_packet')}
+                disabled={isGenerating}
+                className="px-6 py-3 bg-[#8dff2d] text-black rounded-lg hover:bg-[#7be525] transition-colors flex items-center gap-2 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <FileTextIcon className="h-4 w-4" />
+                {isGenerating ? 'Generating...' : 'Download Claim Packet'}
+              </motion.button>
+              <motion.button
+                onClick={() => handleGenerateDocument('demand_letter')}
+                disabled={isGenerating}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <MailIcon className="h-4 w-4" />
+                {isGenerating ? 'Generating...' : 'Download Demand Letter'}
+              </motion.button>
+            </div>
+          </div>
+        )}
+
+        {/* Case Documents Section */}
+        {selectedCaseId && caseDocuments.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-white mb-4">Generated Documents</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {caseDocuments.map((doc, index) => (
+                <motion.div
+                  key={doc.document_id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="bg-gray-900 rounded-xl p-4 border border-gray-700 hover:border-[#8dff2d]/50 transition-all duration-300"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    {doc.document_type === 'claim_packet' ? (
+                      <FileTextIcon className="h-5 w-5 text-[#8dff2d]" />
+                    ) : (
+                      <MailIcon className="h-5 w-5 text-blue-400" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-white truncate">
+                        {doc.document_name}
+                      </h3>
+                      <p className="text-sm text-gray-400">
+                        {doc.document_type.replace('_', ' ').toUpperCase()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-400 mb-3">
+                    <CalendarIcon className="h-4 w-4" />
+                    <span>{new Date(doc.generated_date).toLocaleDateString()}</span>
+                  </div>
+                  <button
+                    onClick={() => handleGenerateDocument(doc.document_type as 'claim_packet' | 'demand_letter')}
+                    className="w-full px-3 py-2 text-sm bg-[#8dff2d] text-black rounded-lg hover:bg-[#7be525] transition-colors flex items-center justify-center gap-2 font-medium"
+                  >
+                    <DownloadIcon className="h-4 w-4" />
+                    Download
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Documents Grid */}
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8dff2d] mx-auto mb-4"></div>
               <p className="text-gray-300">Loading documents...</p>
+            </div>
+          </div>
+        ) : allCases.length === 0 ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <FileTextIcon className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">No Cases Found</h3>
+              <p className="text-gray-400 mb-6">
+                Complete the chatbot questionnaire to create a case and generate documents.
+              </p>
+              <button
+                onClick={() => window.location.href = '/'}
+                className="px-6 py-3 bg-[#8dff2d] text-black rounded-lg hover:bg-[#7be525] transition-colors font-semibold"
+              >
+                Start New Case
+              </button>
+            </div>
+          </div>
+        ) : !selectedCaseId ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <FileTextIcon className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">Select a Case</h3>
+              <p className="text-gray-400 mb-6">
+                Please select a case from the dropdown above to view and generate documents.
+              </p>
+            </div>
+          </div>
+        ) : filteredDocuments.length === 0 && caseDocuments.length === 0 ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <FileTextIcon className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">No Documents Yet</h3>
+              <p className="text-gray-400 mb-6">
+                Generate your claim packet and demand letter using the buttons above.
+              </p>
             </div>
           </div>
         ) : (

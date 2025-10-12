@@ -14,31 +14,63 @@ const Dashboard = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [chatHistory, setChatHistory] = useState<Array<{ id: string; title: string; timestamp: string }>>([]);
   const [activeChatId, setActiveChatId] = useState<string | undefined>();
+  const [currentCaseId, setCurrentCaseId] = useState<string | undefined>();
   const [hasSubscription, setHasSubscription] = useState(false);
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(true);
 
-  // Fetch user's chat history
+  // Fetch user's chat history and current case
   useEffect(() => {
-    const fetchChatHistory = async () => {
+    const fetchUserData = async () => {
       if (user) {
         try {
-          const response = await apiClient.getUserChats(user.id) as { chats: Array<{ id: string; title: string; timestamp: string }> };
-          if (response.chats && response.chats.length > 0) {
+          // Check localStorage for current case ID first
+          const storedCaseId = localStorage.getItem('currentCaseId');
+          if (storedCaseId) {
+            setCurrentCaseId(storedCaseId);
+            // Clear it after using it
+            localStorage.removeItem('currentCaseId');
+          }
+
+          // Fetch chat history
+          const chatResponse = await apiClient.getUserChats(user.id) as { chats: Array<{ id: string; title: string; timestamp: string }> };
+          if (chatResponse.chats && chatResponse.chats.length > 0) {
             // Format the chat history with relative timestamps
-            const formattedChats = response.chats.map((chat: { id: string; title: string; timestamp: string }) => ({
+            const formattedChats = chatResponse.chats.map((chat: { id: string; title: string; timestamp: string }) => ({
               id: chat.id,
               title: chat.title,
               timestamp: formatTimestamp(chat.timestamp)
             }));
             setChatHistory(formattedChats);
           }
+
+          // Fetch user's cases to get the most recent one (if no stored case ID)
+          if (!storedCaseId) {
+            try {
+              const casesResponse = await apiClient.getUserCases(user.id) as { cases: Array<{ id: string; created_at: string | null }> };
+              if (casesResponse.cases && casesResponse.cases.length > 0) {
+                // Get the most recent case if timestamps are available, otherwise get the first one
+                const casesWithTimestamps = casesResponse.cases.filter(c => c.created_at);
+                if (casesWithTimestamps.length > 0) {
+                  const mostRecentCase = casesWithTimestamps.sort((a, b) => 
+                    new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime()
+                  )[0];
+                  setCurrentCaseId(mostRecentCase.id);
+                } else {
+                  // Fallback to first case if no timestamps
+                  setCurrentCaseId(casesResponse.cases[0].id);
+                }
+              }
+            } catch (caseError) {
+              console.error('Error fetching user cases:', caseError);
+            }
+          }
         } catch (error) {
-          console.error('Error fetching chat history:', error);
+          console.error('Error fetching user data:', error);
         }
       }
     };
 
-    fetchChatHistory();
+    fetchUserData();
   }, [user]);
 
   const formatTimestamp = (timestamp: string) => {
@@ -105,6 +137,7 @@ const Dashboard = () => {
 
   const handleCaseUpdate = (caseId: string, status: string) => {
     console.log('Case updated:', caseId, status);
+    setCurrentCaseId(caseId);
   };
 
   if (!isAuthenticated || !user) {
@@ -180,6 +213,7 @@ const Dashboard = () => {
           ) : activeTab === 'documents' ? (
             <DashboardDocuments
               userId={user.id}
+              currentCaseId={currentCaseId}
             />
           ) : activeTab === 'analytics' ? (
             <DashboardAnalytics

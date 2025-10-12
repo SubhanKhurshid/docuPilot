@@ -11,7 +11,15 @@ import {
   EyeIcon,
   DownloadIcon,
 } from 'lucide-react';
-import { apiClient, CaseDetails } from '../lib/api';
+import { apiClient } from '../lib/api';
+
+interface Case {
+  id: string;
+  injury_name: string;
+  status: string;
+  created_at: string | null;
+  updated_at: string | null;
+}
 
 interface DashboardMainProps {
   userId: string;
@@ -19,9 +27,9 @@ interface DashboardMainProps {
 }
 
 const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onCaseUpdate }) => {
-  const [cases, setCases] = useState<CaseDetails[]>([]);
+  const [cases, setCases] = useState<Case[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [, setSelectedCase] = useState<CaseDetails | null>(null);
+  const [selectedCase, setSelectedCase] = useState<Case | null>(null);
 
   useEffect(() => {
     loadUserCases();
@@ -30,8 +38,9 @@ const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onCaseUpdate }) =
   const loadUserCases = async () => {
     try {
       setIsLoading(true);
-      const response = await apiClient.getUserCases(userId) as { cases: CaseDetails[] };
+      const response = await apiClient.getUserCases(userId) as { cases: Case[] };
       setCases(response.cases);
+      console.log('Loaded cases:', response.cases);
     } catch (error) {
       console.error('Error loading cases:', error);
     } finally {
@@ -69,9 +78,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onCaseUpdate }) =
     return injury.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  const totalFinancialImpact = cases.reduce((sum, case_) => 
-    sum + (case_.ai_analysis_summary?.total_financial_impact || 0), 0
-  );
+  const totalFinancialImpact = 0; // Not available in current Case structure
 
   const completedCases = cases.filter(case_ => 
     case_.status === 'demand_letter_generated'
@@ -195,7 +202,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onCaseUpdate }) =
               <div className="space-y-4">
                 {cases.map((case_, index) => (
                   <motion.div
-                    key={case_.case_id}
+                    key={case_.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
@@ -210,7 +217,7 @@ const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onCaseUpdate }) =
                           <h3 className="font-semibold text-white">
                             {formatInjuryName(case_.injury_name)}
                           </h3>
-                          <p className="text-sm text-gray-400">Case #{case_.case_id.slice(-8)}</p>
+                          <p className="text-sm text-gray-400">Case #{case_.id.slice(-8)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
@@ -234,11 +241,11 @@ const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onCaseUpdate }) =
                           <div className="flex-1 bg-gray-700 rounded-full h-2">
                             <div
                               className="bg-[#8dff2d] h-2 rounded-full transition-all duration-300"
-                              style={{ width: `${case_.progress_percentage}%` }}
+                              style={{ width: `${case_.status === 'new' ? '25' : case_.status === 'in_progress' ? '50' : '100'}%` }}
                             />
                           </div>
                           <span className="text-sm font-medium text-white">
-                            {Math.round(case_.progress_percentage)}%
+                            {case_.status === 'new' ? '25' : case_.status === 'in_progress' ? '50' : '100'}%
                           </span>
                         </div>
                       </div>
@@ -246,32 +253,26 @@ const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onCaseUpdate }) =
                       <div>
                         <p className="text-sm text-gray-400">Documents</p>
                         <p className="text-sm font-medium text-white">
-                          {case_.completed_docs?.length || 0} / {case_.required_docs?.length || 0} completed
+                          Case Status: {case_.status}
                         </p>
                       </div>
 
                       <div>
                         <p className="text-sm text-gray-400">Estimated Value</p>
                         <p className="text-sm font-medium text-white">
-                          ${case_.ai_analysis_summary?.total_financial_impact?.toLocaleString() || '0'}
+                          $0 (Not calculated)
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div className="flex gap-2">
-                        {(case_.required_docs || []).map((doc, docIndex) => (
-                          <span
-                            key={docIndex}
-                            className={`px-2 py-1 rounded text-xs font-medium ${
-                              (case_.completed_docs || []).includes(doc)
-                                ? 'bg-[#8dff2d] text-black'
-                                : 'bg-gray-700 text-gray-300'
-                            }`}
-                          >
-                            {doc.replace(/_/g, ' ')}
-                          </span>
-                        ))}
+                        <span className="px-2 py-1 rounded text-xs font-medium bg-gray-700 text-gray-300">
+                          Claim Packet
+                        </span>
+                        <span className="px-2 py-1 rounded text-xs font-medium bg-gray-700 text-gray-300">
+                          Demand Letter
+                        </span>
                       </div>
                       <div className="flex gap-2">
                         <button className="px-3 py-1 text-sm text-gray-400 hover:text-white transition-colors">
