@@ -94,22 +94,21 @@ const FloatingChatButton: React.FC = () => {
 
             {/* Help Text */}
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, x: 10, y: 10 }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="absolute right-20 top-1/2 transform -translate-y-1/2 bg-[#0a0a0a]/95 backdrop-blur-xl border border-[#333333]/50 rounded-2xl px-4 py-3 shadow-2xl"
+              className="absolute bottom-16 right-8 bg-[#0a0a0a]/95 backdrop-blur-xl border border-[#333333]/50 rounded-2xl px-4 py-3 shadow-2xl whitespace-nowrap"
             >
               <div className="flex items-center gap-3">
                 <div className="w-2 h-2 bg-[#8dff2d] rounded-full animate-pulse" />
                 <div>
-                  <p className="text-white font-semibold text-sm">Need help filing your claim?</p>
-                  <p className="text-gray-400 text-xs">Click to chat with our AI assistant</p>
+                  <p className="text-white font-semibold text-sm">Need help</p>
                 </div>
               </div>
               
-              {/* Arrow pointing to button */}
-              <div className="absolute right-0 top-1/2 transform translate-x-full -translate-y-1/2">
-                <div className="w-0 h-0 border-l-[8px] border-l-[#333333]/50 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent" />
+              {/* Arrow pointing to bottom-right (button) */}
+              <div className="absolute bottom-0 right-0 transform translate-x-1/4 translate-y-3/4">
+                <div className="w-0 h-0 border-t-[8px] border-t-[#333333]/50 border-l-[8px] border-l-[#333333]/50 border-r-[8px] border-r-transparent border-b-[8px] border-b-transparent" />
               </div>
             </motion.div>
           </motion.div>
