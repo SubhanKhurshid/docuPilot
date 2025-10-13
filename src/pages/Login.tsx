@@ -20,7 +20,7 @@ const Login = () => {
           path="/login"
           routing="path"
           signUpUrl="/signup"
-          redirectUrl="/dashboard"
+          forceRedirectUrl="/dashboard"
           appearance={{
             variables: {
               colorPrimary: "#8dff2d",
