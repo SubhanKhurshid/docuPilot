@@ -202,6 +202,8 @@ export interface HomePageChatResponse {
   answers?: Record<string, string>;
   completed?: boolean;
   category?: string;
+  has_injuries?: boolean;
+  injury_description?: string;
 }
 
 class ApiClient {

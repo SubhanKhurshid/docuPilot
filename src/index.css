@@ -79,4 +79,25 @@
   .font-bold {
     font-weight: 700;
   }
+
+  /* Custom date picker styling for dark theme */
+  input[type="date"] {
+    color-scheme: dark;
+    cursor: pointer;
+  }
+  
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+  }
+  
+  input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+  }
+  
+  input[type="date"]::-webkit-datetime-edit {
+    padding: 0;
+  }
 }
