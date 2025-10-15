@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRightIcon,
   CheckIcon,
@@ -10,15 +10,590 @@ import {
   SparklesIcon,
   TrendingUpIcon,
   BotIcon,
-  DollarSignIcon
+  DollarSignIcon,
+  SendIcon,
+  ChevronDownIcon
 } from 'lucide-react';
 import { CircularProgress } from '../components/CircularProgress';
 import SettlementCalculator from '../components/SettlementCalculator';
 import { useSubscription } from '../contexts/SubscriptionContext';
-import FloatingChatButton from '../components/FloatingChatButton';
+import { useState, useRef, useEffect } from 'react';
+import { apiClient } from '../lib/api';
+
+interface Message {
+  id: number;
+  text: string;
+  isUser: boolean;
+  buttons?: Array<{
+    label: string;
+    value: string;
+  }>;
+}
+
+const ChatBubble = ({ 
+  message, 
+  isUser, 
+  buttons, 
+  onButtonClick 
+}: { 
+  message: string; 
+  isUser: boolean; 
+  buttons?: Array<{ label: string; value: string }>; 
+  onButtonClick?: (value: string) => void;
+}) => {
+  return (
+    <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+      <div
+        className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+          isUser
+            ? 'bg-gradient-to-r from-[#8dff2d] to-[#7be525] text-black font-medium'
+            : 'bg-[#222222] text-gray-200 font-normal'
+        }`}
+      >
+        {message}
+      </div>
+      {buttons && buttons.length > 0 && (
+        <div className="flex flex-col gap-2 mt-3 w-full max-w-[80%]">
+          {buttons.map((button, index) => (
+            <motion.button
+              key={index}
+              onClick={() => onButtonClick?.(button.value)}
+              className="px-4 py-3 rounded-xl border border-[#8dff2d] text-[#8dff2d] font-medium text-sm hover:bg-[#8dff2d] hover:text-black transition-all duration-300 text-left"
+              whileHover={{ scale: 1.02, x: 5 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {button.label}
+            </motion.button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const FAQItem = ({ 
+  question, 
+  onQuestionClick 
+}: { 
+  question: string; 
+  onQuestionClick: (question: string) => void;
+}) => {
+  return (
+    <button
+      onClick={() => onQuestionClick(question)}
+      className="w-full flex items-center justify-between py-3 px-4 text-left hover:bg-[#222222]/50 transition-all border-b border-[#333333]/50 last:border-b-0"
+      aria-label={`Ask: ${question}`}
+    >
+      <span className="text-sm font-medium text-gray-200">{question}</span>
+      <ArrowRightIcon className="h-4 w-4 text-[#8dff2d] flex-shrink-0 ml-2" />
+    </button>
+  );
+};
+
+const FAQSection = ({ onQuestionClick }: { onQuestionClick: (question: string) => void }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const faqs = [
+    "How long does it take to submit a claim?",
+    "What documents do I need?",
+    "Can I handle this without a lawyer?",
+    "Do I need insurance info?",
+    "How do I document my injury?"
+  ];
+
+  return (
+    <div className="border-t border-[#333333]/50 bg-[#0a0a0a]/80">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between p-4 hover:bg-[#222222]/30 transition-colors"
+        aria-label="Toggle FAQ section"
+      >
+        <div className="flex items-center gap-2">
+          <FileTextIcon className="h-4 w-4 text-[#8dff2d]" />
+          <span className="text-sm font-semibold text-white">Common Questions</span>
+        </div>
+        <motion.div
+          animate={{ rotate: isExpanded ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <ChevronDownIcon className="h-5 w-5 text-[#8dff2d]" />
+        </motion.div>
+      </button>
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <div className="max-h-64 overflow-y-auto">
+              {faqs.map((question, index) => (
+                <FAQItem 
+                  key={index} 
+                  question={question} 
+                  onQuestionClick={(q) => {
+                    setIsExpanded(false);
+                    onQuestionClick(q);
+                  }} 
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 const HomePage = () => {
   const { hasActiveSubscription } = useSubscription();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [conversationStep, setConversationStep] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Store collected information to pass in context
+  const [claimType, setClaimType] = useState<string>('');
+  const [accidentDate, setAccidentDate] = useState<string>('');
+  const [hasInjuries, setHasInjuries] = useState<boolean>(false);
+  const [injuryDescription, setInjuryDescription] = useState<string>('');
+  const [leadInfo, setLeadInfo] = useState<{ name?: string; email?: string; phone?: string }>({});
+  const [isInQuestionnaire, setIsInQuestionnaire] = useState(false);
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false);
+  const [questionIndex, setQuestionIndex] = useState<number>(0);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+
+  // Initialize chat on component mount
+  useEffect(() => {
+    const initializeChat = async () => {
+      if (isInitialized) return;
+      
+      setIsTyping(true);
+      
+      try {
+        const response = await apiClient.homePageChat({
+          message: "init",
+          context: {
+            step: 0
+          }
+        });
+
+        // Set session ID
+        if (response.session_id) {
+          setSessionId(response.session_id);
+        }
+
+        // Set initial step
+        if (response.next_step !== undefined) {
+          setConversationStep(response.next_step);
+        }
+
+        // Add initial bot message with buttons
+        const initialMessage: Message = {
+          id: 1,
+          text: "Hi there! I'm ClaimBot. I can help you handle your personal injury claim step-by-step without an attorney. What type of incident are you dealing with?",
+          isUser: false,
+          buttons: [
+            { label: "🚗 Auto Accident", value: "Auto Accident" },
+            { label: "🚶 Slip & Fall", value: "Slip & Fall" },
+            { label: "💼 Workplace Injury", value: "Workplace Injury" },
+            { label: "📋 Other", value: "Other" }
+          ]
+        };
+        setMessages([initialMessage]);
+        setIsInitialized(true);
+        
+      } catch (error) {
+        console.error('Error initializing chat:', error);
+        
+        // Fallback to default message with buttons if API fails
+        const fallbackMessage: Message = {
+          id: 1,
+          text: "Hi there! I'm ClaimBot. I can help you handle your personal injury claim step-by-step without an attorney. What type of incident are you dealing with?",
+          isUser: false,
+          buttons: [
+            { label: "🚗 Auto Accident", value: "Auto Accident" },
+            { label: "🚶 Slip & Fall", value: "Slip & Fall" },
+            { label: "💼 Workplace Injury", value: "Workplace Injury" },
+            { label: "📋 Other", value: "Other" }
+          ]
+        };
+        setMessages([fallbackMessage]);
+        setIsInitialized(true);
+      } finally {
+        setIsTyping(false);
+      }
+    };
+
+    initializeChat();
+  }, [isInitialized]);
+
+  const handleSkipQuestionnaire = async () => {
+    setIsTyping(true);
+
+    try {
+      const response = await apiClient.homePageChat({
+        message: "SKIP_QUESTIONS",
+        session_id: sessionId || undefined,
+        context: {
+          step: conversationStep,
+          claim_type: claimType,
+          accident_date: accidentDate,
+          
+          lead_info: leadInfo,
+          question_index: questionIndex,
+          answers: answers,
+          skip_to_completion: true,
+          conversation_history: messages.map(msg => ({
+            text: msg.text,
+            isUser: msg.isUser
+          }))
+        }
+      });
+
+      setIsTyping(false);
+      setIsInQuestionnaire(false);
+
+      // Add AI response
+      const aiResponse: Message = {
+        id: messages.length + 1,
+        text: response.response,
+        isUser: false
+      };
+      setMessages(prev => [...prev, aiResponse]);
+
+      // Check if signup is required
+      if ((response as any).require_signup) {
+        setShowSignupPrompt(true);
+      }
+
+    } catch (error) {
+      console.error('Error skipping questionnaire:', error);
+      setIsTyping(false);
+      setIsInQuestionnaire(false);
+    }
+  };
+
+  const handleButtonClick = async (value: string) => {
+    // Remove buttons from the last bot message
+    setMessages(prev => prev.map((msg, index) => 
+      index === prev.length - 1 ? { ...msg, buttons: undefined } : msg
+    ));
+
+    // Store claim type when user selects incident type
+    setClaimType(value);
+
+    // Add user message
+    const userMessage: Message = {
+      id: messages.length + 1,
+      text: value,
+      isUser: true
+    };
+    setMessages(prev => [...prev, userMessage]);
+    setIsTyping(true);
+
+    try {
+      // Call the homepage chat API
+      // Don't send has_injuries on step 2 - let AI determine it
+      const contextData: any = {
+        step: conversationStep,
+        claim_type: value,
+        accident_date: accidentDate,
+        lead_info: leadInfo,
+        question_index: questionIndex,
+        answers: answers,
+        conversation_history: messages.map(msg => ({
+          text: msg.text,
+          isUser: msg.isUser
+        }))
+      };
+      
+      // Only include has_injuries/injury_description after step 3 (after injury question is answered)
+      if (conversationStep > 3) {
+        contextData.has_injuries = hasInjuries;
+        contextData.injury_description = injuryDescription;
+      }
+      
+      const response = await apiClient.homePageChat({
+        message: value,
+        session_id: sessionId || undefined,
+        context: contextData
+      });
+
+      // Update session ID if provided
+      if (response.session_id && !sessionId) {
+        setSessionId(response.session_id);
+      }
+
+      // Update conversation step
+      if (response.next_step !== undefined) {
+        setConversationStep(response.next_step);
+      }
+
+      // Update question index if provided
+      if (response.question_index !== undefined) {
+        setQuestionIndex(response.question_index);
+      }
+
+      // Update answers if provided
+      if (response.answers) {
+        setAnswers(response.answers);
+      }
+
+      // Update injury status if provided by AI
+      if (response.has_injuries !== undefined) {
+        setHasInjuries(response.has_injuries);
+      }
+      
+      if (response.injury_description) {
+        setInjuryDescription(response.injury_description);
+      }
+
+      // Check if we're in questionnaire (step 6+)
+      if (response.next_step >= 6) {
+        setIsInQuestionnaire(true);
+      }
+
+      // Check if signup is required
+      if ((response as any).require_signup) {
+        setShowSignupPrompt(true);
+        setIsInQuestionnaire(false);
+      }
+
+      setIsTyping(false);
+
+      // Add AI response
+      const aiResponse: Message = {
+        id: messages.length + 2,
+        text: response.response,
+        isUser: false
+      };
+      setMessages(prev => [...prev, aiResponse]);
+
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      setIsTyping(false);
+
+      // Fallback message
+      const fallbackResponse: Message = {
+        id: messages.length + 2,
+        text: "Thank you! Let me help you with your claim. Please tell me more about what happened.",
+        isUser: false
+      };
+      setMessages(prev => [...prev, fallbackResponse]);
+    }
+  };
+
+  const handleFAQClick = async (question: string) => {
+    // Add user message
+    const userMessage: Message = {
+      id: messages.length + 1,
+      text: question,
+      isUser: true
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setIsTyping(true);
+
+    try {
+      // Call the homepage chat API
+      // Don't send has_injuries on step 2 - let AI determine it
+      const contextData: any = {
+        step: conversationStep,
+        claim_type: claimType,
+        accident_date: accidentDate,
+        lead_info: leadInfo,
+        question_index: questionIndex,
+        answers: answers,
+        conversation_history: messages.map(msg => ({
+          text: msg.text,
+          isUser: msg.isUser
+        }))
+      };
+      
+      // Only include has_injuries/injury_description after step 3 (after injury question is answered)
+      if (conversationStep > 3) {
+        contextData.has_injuries = hasInjuries;
+        contextData.injury_description = injuryDescription;
+      }
+      
+      const response = await apiClient.homePageChat({
+        message: question,
+        session_id: sessionId || undefined,
+        context: contextData
+      });
+
+      // Update session ID if provided
+      if (response.session_id && !sessionId) {
+        setSessionId(response.session_id);
+      }
+
+      // Update conversation step
+      if (response.next_step !== undefined) {
+        setConversationStep(response.next_step);
+      }
+
+      // Update question index if provided
+      if (response.question_index !== undefined) {
+        setQuestionIndex(response.question_index);
+      }
+
+      // Update answers if provided
+      if (response.answers) {
+        setAnswers(response.answers);
+      }
+
+      // Update injury status if provided by AI
+      if (response.has_injuries !== undefined) {
+        setHasInjuries(response.has_injuries);
+      }
+      
+      if (response.injury_description) {
+        setInjuryDescription(response.injury_description);
+      }
+
+      setIsTyping(false);
+
+      // Add AI response
+      const aiResponse: Message = {
+        id: messages.length + 2,
+        text: response.response,
+        isUser: false
+      };
+      setMessages(prev => [...prev, aiResponse]);
+
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      setIsTyping(false);
+
+      // Fallback message
+      const fallbackResponse: Message = {
+        id: messages.length + 2,
+        text: "Thank you for your question! I'm here to help you with your claim. No attorney needed—I'll guide you step by step.",
+        isUser: false
+      };
+      setMessages(prev => [...prev, fallbackResponse]);
+    }
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputValue.trim()) return;
+
+    const userInput = inputValue.trim();
+    
+    // Detect and store information from user input BEFORE making API call
+    let detectedAccidentDate = accidentDate;
+    let detectedInjuryDescription = injuryDescription;
+    let detectedHasInjuries = hasInjuries;
+    
+    // Step 1: After selecting claim type, user provides date
+    if (conversationStep === 1 && !accidentDate) {
+      detectedAccidentDate = userInput;
+      setAccidentDate(userInput);
+    }
+    
+    // Step 2: Let AI determine if user has injuries based on their response
+    // The backend will interpret the answer and send back has_injuries status
+    
+    const userMessage: Message = {
+      id: messages.length + 1,
+      text: userInput,
+      isUser: true
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue('');
+    setIsTyping(true);
+
+    try {
+      // Call the homepage chat API with detected values
+      // Don't send has_injuries on step 2 - let AI determine it
+      const contextData: any = {
+        step: conversationStep,
+        claim_type: claimType,
+        accident_date: detectedAccidentDate,
+        lead_info: leadInfo,
+        question_index: questionIndex,
+        answers: answers,
+        conversation_history: messages.map(msg => ({
+          text: msg.text,
+          isUser: msg.isUser
+        }))
+      };
+      
+      // Only include has_injuries/injury_description after step 3 (after injury question is answered)
+      if (conversationStep > 3) {
+        contextData.has_injuries = detectedHasInjuries;
+        contextData.injury_description = detectedInjuryDescription;
+      }
+      
+      const response = await apiClient.homePageChat({
+        message: userInput,
+        session_id: sessionId || undefined,
+        context: contextData
+      });
+
+      // Update session ID if provided
+      if (response.session_id && !sessionId) {
+        setSessionId(response.session_id);
+      }
+
+      // Update conversation step
+      if (response.next_step !== undefined) {
+        setConversationStep(response.next_step);
+      }
+
+      // Update question index if provided
+      if (response.question_index !== undefined) {
+        setQuestionIndex(response.question_index);
+      }
+
+      // Update answers if provided
+      if (response.answers) {
+        setAnswers(response.answers);
+      }
+
+      // Check if we're in questionnaire (step 6+)
+      if (response.next_step >= 6) {
+        setIsInQuestionnaire(true);
+      }
+
+      // Check if signup is required
+      if ((response as any).require_signup) {
+        setShowSignupPrompt(true);
+        setIsInQuestionnaire(false);
+      }
+
+      setIsTyping(false);
+
+      // Add AI response
+      const aiResponse: Message = {
+        id: messages.length + 2,
+        text: response.response,
+        isUser: false
+      };
+      setMessages(prev => [...prev, aiResponse]);
+
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      setIsTyping(false);
+
+      // Fallback message
+      const fallbackResponse: Message = {
+        id: messages.length + 2,
+        text: "Thank you for sharing that! I'm here to help you maximize your settlement. To get personalized assistance with your claim, please sign up to access our full AI-powered platform.",
+        isUser: false
+      };
+      setMessages(prev => [...prev, fallbackResponse]);
+    }
+  };
+
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -112,7 +687,7 @@ const HomePage = () => {
       {/* Main Content */}
       <div className="relative z-10">
         {/* Hero Section */}
-        <section className="min-h-screen flex items-center">
+        <section className="min-h-screen flex items-center py-20">
           <div className="container mx-auto px-6">
             <motion.div
               className="max-w-7xl mx-auto"
@@ -120,109 +695,253 @@ const HomePage = () => {
               initial="hidden"
               animate="visible"
             >
-              <div className="text-center max-w-4xl mx-auto">
-                <motion.div
-                  className="inline-flex items-center gap-3 px-4 py-2 mb-8 rounded-full border border-[#333333] bg-[#111111]/80 backdrop-blur-sm"
-                  variants={itemVariants}
-                >
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                {/* Left: Text Content */}
+                <div className="max-w-2xl">
                   <motion.div
-                    className="w-2 h-2 bg-[#8dff2d] rounded-full"
-                    animate={{
-                      scale: [1, 1.2, 1],
-                      opacity: [0.7, 1, 0.7]
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                  />
-                  <span className="text-sm text-gray-300 font-medium">AI-Powered Injury Solutions</span>
-                  <SparklesIcon className="h-4 w-4 text-[#8dff2d]" />
-                </motion.div>
-
-                <motion.h1
-                  className="text-5xl md:text-7xl font-semibold mb-8 leading-tight tracking-tight"
-                  variants={itemVariants}
-                >
-                  <span className="text-white">Your case,</span>
-                  <br />
-                  <span className="text-white">your settlement—</span>
-                  <br />
-                  <span className="text-[#8dff2d] font-medium">AI powered</span>
-                </motion.h1>
-
-                <motion.p
-                  className="text-xl text-gray-300 mb-12 leading-relaxed font-normal max-w-3xl mx-auto"
-                  variants={itemVariants}
-                >
-                  Maximize your personal injury settlements with expert AI guidance, customizable documents, and step-by-step instructions.
-                  <span className="text-[#8dff2d] font-semibold"> Keep 100% of your settlement.</span>
-                </motion.p>
-
-                <motion.div
-                  className="flex flex-col sm:flex-row gap-4 mb-12 justify-center"
-                  variants={itemVariants}
-                >
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    className="inline-flex items-center gap-3 px-4 py-2 mb-8 rounded-full border border-[#333333] bg-[#111111]/80 backdrop-blur-sm"
+                    variants={itemVariants}
                   >
-                    <Link
-                      to="/signup"
-                      className="group inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full bg-[#8dff2d] text-black font-semibold text-base sm:text-lg hover:bg-[#7be525] transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20 w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]"
-                    >
-                      {hasActiveSubscription ? "Go to Dashboard" : "Start Free Assessment"}
-                      <motion.div
-                        className="ml-2"
-                        animate={{ x: [0, 4, 0] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                      >
-                        <ArrowRightIcon className="h-5 w-5" />
-                      </motion.div>
-                    </Link>
-                  </motion.div>
-                  
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <button
-                      onClick={() => {
-                        // Trigger the floating chatbot
-                        if ((window as any).triggerChatbot) {
-                          (window as any).triggerChatbot();
-                        }
+                    <motion.div
+                      className="w-2 h-2 bg-[#8dff2d] rounded-full"
+                      animate={{
+                        scale: [1, 1.2, 1],
+                        opacity: [0.7, 1, 0.7]
                       }}
-                      className="group inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 rounded-full border border-[#8dff2d] text-[#8dff2d] font-semibold text-base sm:text-lg hover:bg-[#8dff2d] hover:text-black transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20 w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]"
-                    >
-                      Need help filing your claim?
-                      <motion.div
-                        className="ml-2"
-                        animate={{ rotate: [0, 10, -10, 0] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      >
-                        <BotIcon className="h-5 w-5" />
-                      </motion.div>
-                    </button>
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    />
+                    <span className="text-sm text-gray-300 font-medium">AI-Powered Injury Solutions</span>
+                    <SparklesIcon className="h-4 w-4 text-[#8dff2d]" />
                   </motion.div>
-                </motion.div>
 
+                  <motion.h1
+                    className="text-5xl md:text-6xl lg:text-7xl font-semibold mb-8 leading-tight tracking-tight"
+                    variants={itemVariants}
+                  >
+                    <span className="text-white">Your case,</span>
+                    <br />
+                    <span className="text-white">your settlement—</span>
+                    <br />
+                    <span className="text-[#8dff2d] font-medium">AI powered</span>
+                  </motion.h1>
+
+                  <motion.p
+                    className="text-xl text-gray-300 mb-12 leading-relaxed font-normal"
+                    variants={itemVariants}
+                  >
+                    Maximize your personal injury settlements with expert AI guidance, customizable documents, and step-by-step instructions.
+                    <span className="text-[#8dff2d] font-semibold"> Keep 100% of your settlement.</span>
+                  </motion.p>
+
+                  <motion.div
+                    className="flex flex-col sm:flex-row gap-4 mb-12"
+                    variants={itemVariants}
+                  >
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Link
+                        to="/signup"
+                        className="group inline-flex items-center justify-center px-8 py-4 rounded-full bg-[#8dff2d] text-black font-semibold text-lg hover:bg-[#7be525] transition-all duration-300 shadow-lg hover:shadow-[#8dff2d]/20 w-full sm:w-auto"
+                      >
+                        {hasActiveSubscription ? "Go to Dashboard" : "Start Free Assessment"}
+                        <motion.div
+                          className="ml-2"
+                          animate={{ x: [0, 4, 0] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                        >
+                          <ArrowRightIcon className="h-5 w-5" />
+                        </motion.div>
+                      </Link>
+                    </motion.div>
+                  </motion.div>
+
+                  <motion.div
+                    className="flex flex-wrap items-center gap-6 text-sm text-gray-400"
+                    variants={itemVariants}
+                  >
+                    <div className="flex items-center gap-2">
+                      <ShieldCheckIcon className="h-4 w-4 text-[#8dff2d]" />
+                      <span className="font-medium">HIPAA Compliant</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckIcon className="h-4 w-4 text-[#8dff2d]" />
+                      <span className="font-medium">No Legal Fees</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StarIcon className="h-4 w-4 text-[#8dff2d] fill-current" />
+                      <span className="font-medium">4.9/5 Rating</span>
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* Right: Chatbot */}
                 <motion.div
-                  className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-400"
+                  className="relative"
                   variants={itemVariants}
+                  animate={{
+                    y: [0, -10, 0]
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "easeInOut" as const
+                  }}
                 >
-                  <div className="flex items-center gap-2">
-                    <ShieldCheckIcon className="h-4 w-4 text-[#8dff2d]" />
-                    <span className="font-medium">HIPAA Compliant</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckIcon className="h-4 w-4 text-[#8dff2d]" />
-                    <span className="font-medium">No Legal Fees</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <StarIcon className="h-4 w-4 text-[#8dff2d] fill-current" />
-                    <span className="font-medium">4.9/5 Rating</span>
+                  <div className="relative">
+                    {/* Glow Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#8dff2d]/20 to-[#7be525]/20 rounded-3xl blur-xl" />
+
+                    {/* Chatbot Container */}
+                    <div className="relative bg-[#0a0a0a]/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-[#333333]/50 overflow-hidden">
+                      <div className="p-6 border-b border-[#333333]/50 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#8dff2d] to-[#7be525] flex items-center justify-center">
+                            <SparklesIcon className="h-5 w-5 text-black" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-white">DocuPilot AI Assistant</h3>
+                            <p className="text-xs text-gray-400">Your Personal Injury Expert</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <motion.div
+                            className="h-2 w-2 rounded-full bg-[#8dff2d]"
+                            animate={{
+                              scale: [1, 1.2, 1],
+                              opacity: [0.7, 1, 0.7]
+                            }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                              ease: "easeInOut"
+                            }}
+                          />
+                          <span className="text-xs text-gray-300 font-medium">Online</span>
+                        </div>
+                      </div>
+
+                      <div className="h-80 overflow-y-auto p-6 flex flex-col gap-4 bg-gradient-to-b from-[#0a0a0a]/50 to-[#111111]/50">
+                        {messages.map(message => (
+                          <motion.div
+                            key={message.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <ChatBubble 
+                              message={message.text} 
+                              isUser={message.isUser} 
+                              buttons={message.buttons}
+                              onButtonClick={handleButtonClick}
+                            />
+                          </motion.div>
+                        ))}
+                        {isTyping && (
+                          <motion.div
+                            className="flex items-center gap-2 text-gray-400 ml-2"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                          >
+                            <div className="flex gap-1">
+                              <motion.span
+                                className="w-2 h-2 bg-gray-400 rounded-full"
+                                animate={{ scale: [1, 1.2, 1] }}
+                                transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                              />
+                              <motion.span
+                                className="w-2 h-2 bg-gray-400 rounded-full"
+                                animate={{ scale: [1, 1.2, 1] }}
+                                transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                              />
+                              <motion.span
+                                className="w-2 h-2 bg-gray-400 rounded-full"
+                                animate={{ scale: [1, 1.2, 1] }}
+                                transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                              />
+                            </div>
+                            <span className="text-sm font-medium">DocuPilot is analyzing...</span>
+                          </motion.div>
+                        )}
+                        <div ref={messagesEndRef} />
+                      </div>
+
+                      {/* FAQ Section */}
+                      <FAQSection onQuestionClick={handleFAQClick} />
+
+                      {/* Skip Questions Button - Only show during questionnaire */}
+                      {isInQuestionnaire && !showSignupPrompt && (
+                        <div className="p-4 border-t border-[#333333]/50 bg-[#0a0a0a]/80 flex justify-center">
+                          <motion.button
+                            onClick={handleSkipQuestionnaire}
+                            className="px-4 py-2 text-sm text-gray-300 hover:text-[#8dff2d] transition-colors font-medium"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            Skip Questions & Get Claim Packet
+                          </motion.button>
+                        </div>
+                      )}
+
+                      {/* Sign-up Prompt - Show when claim packet is ready */}
+                      {showSignupPrompt ? (
+                        <div className="p-6 border-t border-[#333333]/50 bg-gradient-to-r from-[#8dff2d]/10 to-[#7be525]/10">
+                          <div className="text-center">
+                            <h4 className="text-lg font-semibold text-white mb-2">Your Claim Packet is Ready! 🎉</h4>
+                            <p className="text-sm text-gray-300 mb-4">Create your account to access and download your complete claim package</p>
+                            <Link to="/signup">
+                              <motion.button
+                                className="w-full px-6 py-3 rounded-full bg-[#8dff2d] text-black font-semibold hover:bg-[#7be525] transition-colors shadow-lg"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                              >
+                                Create Account
+                              </motion.button>
+                            </Link>
+                           
+                          </div>
+                        </div>
+                      ) : (
+                        <form onSubmit={handleSendMessage} className="p-6 border-t border-[#333333]/50 bg-[#0a0a0a]/80">
+                          <div className="flex gap-3">
+                            {/* Show date picker when asking for accident date (step 2) */}
+                            {conversationStep === 2 && !accidentDate ? (
+                              <input
+                                type="date"
+                                value={inputValue}
+                                onChange={(e) => setInputValue(e.target.value)}
+                                max={new Date().toISOString().split('T')[0]}
+                                className="flex-1 bg-[#222222]/80 border border-[#333333] rounded-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#8dff2d] focus:border-transparent text-white placeholder-gray-400 font-medium"
+                                aria-label="Select accident date"
+                              />
+                            ) : (
+                              <input
+                                type="text"
+                                value={inputValue}
+                                onChange={(e) => setInputValue(e.target.value)}
+                                placeholder="Ask about your injury claim..."
+                                className="flex-1 bg-[#222222]/80 border border-[#333333] rounded-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#8dff2d] focus:border-transparent text-white placeholder-gray-400 font-medium"
+                                aria-label="Chat input"
+                              />
+                            )}
+                            <motion.button
+                              type="submit"
+                              className="p-3 rounded-full bg-[#8dff2d] text-black hover:bg-[#7be525] transition-colors shadow-lg"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              aria-label="Send message"
+                            >
+                              <SendIcon className="h-5 w-5" />
+                            </motion.button>
+                          </div>
+                        </form>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               </div>
@@ -555,9 +1274,6 @@ const HomePage = () => {
           </div>
         </section>
       </div>
-
-      {/* Floating Chat Button */}
-      <FloatingChatButton />
     </div>
   );
 };
