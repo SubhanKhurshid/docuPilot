@@ -147,6 +147,36 @@ const FAQSection = ({ onQuestionClick }: { onQuestionClick: (question: string) =
   );
 };
 
+// Progress Bar Component
+const ProgressBar: React.FC<{ step: number; totalSteps: number }> = ({ step, totalSteps }) => {
+  const progress = Math.min((step / totalSteps) * 100, 100);
+  
+  return (
+    <div className="w-full bg-[#222222]/50 rounded-full h-2 overflow-hidden">
+      <motion.div
+        className="h-full bg-gradient-to-r from-[#8dff2d] to-[#7be525] rounded-full"
+        initial={{ width: 0 }}
+        animate={{ width: `${progress}%` }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      />
+    </div>
+  );
+};
+
+// Inline Tip Component
+const InlineTip: React.FC<{ tip: string; icon: string }> = ({ tip, icon }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex items-start gap-2 p-3 bg-[#8dff2d]/10 border border-[#8dff2d]/20 rounded-lg mb-3"
+    >
+      <span className="text-lg">{icon}</span>
+      <p className="text-xs text-gray-300 font-medium leading-relaxed">{tip}</p>
+    </motion.div>
+  );
+};
+
 const HomePage = () => {
   const { hasActiveSubscription } = useSubscription();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -167,6 +197,21 @@ const HomePage = () => {
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
   const [questionIndex, setQuestionIndex] = useState<number>(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+
+  // Helper function to get contextual tips
+  const getContextualTip = (step: number): { tip: string; icon: string } | null => {
+    const tips: Record<number, { tip: string; icon: string }> = {
+      1: { tip: "Select your incident type to get started. This helps us tailor your claim packet.", icon: "📋" },
+      2: { tip: "Providing the accident date helps establish the timeline for your claim.", icon: "📅" },
+      3: { tip: "Medical records are crucial evidence. Even minor injuries should be documented.", icon: "🏥" },
+      4: { tip: "We'll gather all necessary details to build a strong claim on your behalf.", icon: "💪" },
+      5: { tip: "Your contact info helps us send your customized claim packet directly to you.", icon: "📧" },
+    };
+    return tips[step] || null;
+  };
+
+  // Define total steps for progress bar
+  const TOTAL_STEPS = 6;
 
   // Initialize chat on component mount
   useEffect(() => {
@@ -478,6 +523,99 @@ const HomePage = () => {
         isUser: false
       };
       setMessages(prev => [...prev, fallbackResponse]);
+    }
+  };
+
+  // Quick action handler for yes/no buttons
+  const handleQuickAction = async (action: string) => {
+    // Add user message
+    const userMessage: Message = {
+      id: messages.length + 1,
+      text: action,
+      isUser: true
+    };
+    setMessages(prev => [...prev, userMessage]);
+    setIsTyping(true);
+
+    try {
+      const contextData: any = {
+        step: conversationStep,
+        claim_type: claimType,
+        accident_date: accidentDate,
+        lead_info: leadInfo,
+        question_index: questionIndex,
+        answers: answers,
+        conversation_history: messages.map(msg => ({
+          text: msg.text,
+          isUser: msg.isUser
+        }))
+      };
+
+      // Only include has_injuries/injury_description after step 3 (after injury question is answered)
+      if (conversationStep > 3) {
+        contextData.has_injuries = hasInjuries;
+        contextData.injury_description = injuryDescription;
+      }
+
+      const response = await apiClient.homePageChat({
+        message: action,
+        session_id: sessionId || undefined,
+        context: contextData
+      });
+
+      // Update session ID if provided
+      if (response.session_id && !sessionId) {
+        setSessionId(response.session_id);
+      }
+
+      // Update conversation step
+      if (response.next_step !== undefined) {
+        setConversationStep(response.next_step);
+      }
+
+      // Update question index if provided
+      if (response.question_index !== undefined) {
+        setQuestionIndex(response.question_index);
+      }
+
+      // Update answers if provided
+      if (response.answers) {
+        setAnswers(response.answers);
+      }
+
+      // Update injury status if provided by AI
+      if (response.has_injuries !== undefined) {
+        setHasInjuries(response.has_injuries);
+      }
+      
+      if (response.injury_description) {
+        setInjuryDescription(response.injury_description);
+      }
+
+      // Check if we're in questionnaire (step 6+)
+      if (response.next_step >= 6) {
+        setIsInQuestionnaire(true);
+      }
+
+      // Check if signup is required
+      if ((response as any).require_signup) {
+        setShowSignupPrompt(true);
+        setIsInQuestionnaire(false);
+      }
+
+      setIsTyping(false);
+
+      // Add AI response
+      const aiResponse: Message = {
+        id: messages.length + 2,
+        text: response.response,
+        isUser: false
+      };
+      setMessages(prev => [...prev, aiResponse]);
+
+    } catch (error) {
+      console.error('Error with quick action:', error);
+      setIsTyping(false);
     }
   };
 
@@ -799,31 +937,48 @@ const HomePage = () => {
 
                     {/* Chatbot Container */}
                     <div className="relative bg-[#0a0a0a]/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-[#333333]/50 overflow-hidden">
-                      <div className="p-6 border-b border-[#333333]/50 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#8dff2d] to-[#7be525] flex items-center justify-center">
-                            <SparklesIcon className="h-5 w-5 text-black" />
+                      <div className="p-6 border-b border-[#333333]/50">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#8dff2d] to-[#7be525] flex items-center justify-center">
+                              <SparklesIcon className="h-5 w-5 text-black" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-white">DocuPilot AI Assistant</h3>
+                              <p className="text-xs text-gray-400">Your Personal Injury Expert</p>
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="font-semibold text-white">DocuPilot AI Assistant</h3>
-                            <p className="text-xs text-gray-400">Your Personal Injury Expert</p>
+                          <div className="flex items-center gap-2">
+                            <motion.div
+                              className="h-2 w-2 rounded-full bg-[#8dff2d]"
+                              animate={{
+                                scale: [1, 1.2, 1],
+                                opacity: [0.7, 1, 0.7]
+                              }}
+                              transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                              }}
+                            />
+                            <span className="text-xs text-gray-300 font-medium">Online</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <motion.div
-                            className="h-2 w-2 rounded-full bg-[#8dff2d]"
-                            animate={{
-                              scale: [1, 1.2, 1],
-                              opacity: [0.7, 1, 0.7]
-                            }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              ease: "easeInOut"
-                            }}
-                          />
-                          <span className="text-xs text-gray-300 font-medium">Online</span>
-                        </div>
+                        
+                        {/* Progress Bar */}
+                        {conversationStep > 0 && conversationStep <= TOTAL_STEPS && (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-400 font-medium">
+                                Step {conversationStep} of {TOTAL_STEPS}
+                              </span>
+                              <span className="text-xs text-[#8dff2d] font-semibold">
+                                {Math.round((conversationStep / TOTAL_STEPS) * 100)}% Complete
+                              </span>
+                            </div>
+                            <ProgressBar step={conversationStep} totalSteps={TOTAL_STEPS} />
+                          </div>
+                        )}
                       </div>
 
                       <div className="h-80 overflow-y-auto p-6 flex flex-col gap-4 bg-gradient-to-b from-[#0a0a0a]/50 to-[#111111]/50">
@@ -842,6 +997,41 @@ const HomePage = () => {
                             />
                           </motion.div>
                         ))}
+                        
+                        {/* Contextual Tips */}
+                        {!isTyping && conversationStep > 0 && conversationStep <= TOTAL_STEPS && getContextualTip(conversationStep) && (
+                          <InlineTip 
+                            tip={getContextualTip(conversationStep)!.tip} 
+                            icon={getContextualTip(conversationStep)!.icon} 
+                          />
+                        )}
+                        
+                        {/* Quick Action Buttons for Injury Question (Step 3) */}
+                        {!isTyping && conversationStep === 3 && messages.length > 0 && messages[messages.length - 1]?.isUser === false && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex gap-3 justify-center"
+                          >
+                            <motion.button
+                              onClick={() => handleQuickAction("Yes, I had injuries")}
+                              className="px-6 py-3 bg-[#8dff2d]/10 hover:bg-[#8dff2d]/20 border border-[#8dff2d]/30 rounded-full text-white font-medium transition-all"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              ✅ Yes, I had injuries
+                            </motion.button>
+                            <motion.button
+                              onClick={() => handleQuickAction("No injuries")}
+                              className="px-6 py-3 bg-gray-700/10 hover:bg-gray-700/20 border border-gray-600/30 rounded-full text-white font-medium transition-all"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              ❌ No injuries
+                            </motion.button>
+                          </motion.div>
+                        )}
+                        
                         {isTyping && (
                           <motion.div
                             className="flex items-center gap-2 text-gray-400 ml-2"
