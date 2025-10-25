@@ -105,14 +105,16 @@ export interface LeadCaptureRequest {
   accident_date: string;
   has_injuries: boolean;
   injury_description?: string;
+  session_id?: string;
 }
 
 export interface LeadCaptureResponse {
   success: boolean;
   lead_id: string;
   message: string;
-  claim_packet_ready: boolean;
-  download_url: string;
+  session_id?: string;
+  claim_packet_ready?: boolean;
+  download_url?: string;
 }
 
 export interface SaveCaseRequest {
@@ -193,6 +195,12 @@ export interface HomePageChatRequest {
   };
 }
 
+export interface ButtonOption {
+  label: string;
+  value: string;
+  icon?: string;
+}
+
 export interface HomePageChatResponse {
   response: string;
   session_id: string;
@@ -204,18 +212,32 @@ export interface HomePageChatResponse {
   category?: string;
   has_injuries?: boolean;
   injury_description?: string;
+  buttons?: ButtonOption[];
+  show_input?: boolean;
+  show_date_picker?: boolean;
+  show_download?: boolean;
+  email_sent?: boolean;
+  lead_id?: string;
+  require_signup?: boolean;
 }
 
 class ApiClient {
   private baseUrl: string;
+  private maxRetries: number = 2;
+  private retryDelay: number = 1000; // 1 second
 
   constructor() {
     this.baseUrl = API_BASE_URL;
   }
 
+  private async sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    retryCount: number = 0
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     
@@ -223,20 +245,42 @@ class ApiClient {
       'Content-Type': 'application/json',
     };
 
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
-    });
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          ...defaultHeaders,
+          ...options.headers,
+        },
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.detail || `HTTP error! status: ${response.status}`;
+        
+        // Retry on 5xx server errors or network issues
+        if (response.status >= 500 && retryCount < this.maxRetries) {
+          console.warn(`Request failed with status ${response.status}, retrying... (${retryCount + 1}/${this.maxRetries})`);
+          await this.sleep(this.retryDelay * (retryCount + 1)); // Exponential backoff
+          return this.request<T>(endpoint, options, retryCount + 1);
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      return response.json();
+    } catch (error) {
+      // Handle network errors (no response from server)
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        if (retryCount < this.maxRetries) {
+          console.warn(`Network error, retrying... (${retryCount + 1}/${this.maxRetries})`);
+          await this.sleep(this.retryDelay * (retryCount + 1));
+          return this.request<T>(endpoint, options, retryCount + 1);
+        }
+        throw new Error('Unable to connect to server. Please check your internet connection and try again.');
+      }
+      throw error;
     }
-
-    return response.json();
   }
 
   // Chat API

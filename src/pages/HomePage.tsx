@@ -30,25 +30,24 @@ interface Message {
   }>;
 }
 
-const ChatBubble = ({ 
-  message, 
-  isUser, 
-  buttons, 
-  onButtonClick 
-}: { 
-  message: string; 
-  isUser: boolean; 
-  buttons?: Array<{ label: string; value: string }>; 
+const ChatBubble = ({
+  message,
+  isUser,
+  buttons,
+  onButtonClick
+}: {
+  message: string;
+  isUser: boolean;
+  buttons?: Array<{ label: string; value: string }>;
   onButtonClick?: (value: string) => void;
 }) => {
   return (
     <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
       <div
-        className={`max-w-[80%] px-4 py-3 rounded-2xl ${
-          isUser
+        className={`max-w-[80%] px-4 py-3 rounded-2xl ${isUser
             ? 'bg-gradient-to-r from-[#8dff2d] to-[#7be525] text-black font-medium'
             : 'bg-[#222222] text-gray-200 font-normal'
-        }`}
+          }`}
       >
         {message}
       </div>
@@ -71,11 +70,11 @@ const ChatBubble = ({
   );
 };
 
-const FAQItem = ({ 
-  question, 
-  onQuestionClick 
-}: { 
-  question: string; 
+const FAQItem = ({
+  question,
+  onQuestionClick
+}: {
+  question: string;
   onQuestionClick: (question: string) => void;
 }) => {
   return (
@@ -130,13 +129,13 @@ const FAQSection = ({ onQuestionClick }: { onQuestionClick: (question: string) =
           >
             <div className="max-h-64 overflow-y-auto">
               {faqs.map((question, index) => (
-                <FAQItem 
-                  key={index} 
-                  question={question} 
+                <FAQItem
+                  key={index}
+                  question={question}
                   onQuestionClick={(q) => {
                     setIsExpanded(false);
                     onQuestionClick(q);
-                  }} 
+                  }}
                 />
               ))}
             </div>
@@ -150,7 +149,7 @@ const FAQSection = ({ onQuestionClick }: { onQuestionClick: (question: string) =
 // Progress Bar Component
 const ProgressBar: React.FC<{ step: number; totalSteps: number }> = ({ step, totalSteps }) => {
   const progress = Math.min((step / totalSteps) * 100, 100);
-  
+
   return (
     <div className="w-full bg-[#222222]/50 rounded-full h-2 overflow-hidden">
       <motion.div
@@ -185,41 +184,94 @@ const HomePage = () => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [conversationStep, setConversationStep] = useState(0);
   const [isInitialized, setIsInitialized] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  // Store collected information to pass in context
-  const [claimType, setClaimType] = useState<string>('');
-  const [accidentDate, setAccidentDate] = useState<string>('');
-  const [hasInjuries, setHasInjuries] = useState<boolean>(false);
-  const [injuryDescription, setInjuryDescription] = useState<string>('');
-  const [leadInfo, setLeadInfo] = useState<{ name?: string; email?: string; phone?: string }>({});
-  const [isInQuestionnaire, setIsInQuestionnaire] = useState(false);
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
-  const [questionIndex, setQuestionIndex] = useState<number>(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [progressInfo, setProgressInfo] = useState<{ current: number; total: number } | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Helper function to get contextual tips
-  const getContextualTip = (step: number): { tip: string; icon: string } | null => {
-    const tips: Record<number, { tip: string; icon: string }> = {
-      1: { tip: "Select your incident type to get started. This helps us tailor your claim packet.", icon: "📋" },
-      2: { tip: "Providing the accident date helps establish the timeline for your claim.", icon: "📅" },
-      3: { tip: "Medical records are crucial evidence. Even minor injuries should be documented.", icon: "🏥" },
-      4: { tip: "We'll gather all necessary details to build a strong claim on your behalf.", icon: "💪" },
-      5: { tip: "Your contact info helps us send your customized claim packet directly to you.", icon: "📧" },
+  // Unified function to send messages to backend
+  const sendMessageToBackend = async (message: string) => {
+    // Add user message to UI
+    const userMessage: Message = {
+      id: messages.length + 1,
+      text: message,
+      isUser: true
     };
-    return tips[step] || null;
-  };
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue('');
+    setIsTyping(true);
 
-  // Define total steps for progress bar
-  const TOTAL_STEPS = 6;
+    try {
+      const response = await apiClient.homePageChat({
+        message,
+        session_id: sessionId || undefined,
+        context: {
+          step: conversationStep
+        }
+      });
+
+      // Update session ID if provided
+      if (response.session_id && !sessionId) {
+        setSessionId(response.session_id);
+      }
+
+      // Update conversation step
+      if (response.next_step !== undefined) {
+        setConversationStep(response.next_step);
+      }
+
+      // Update progress info
+      if (response.question_index !== undefined && response.total_questions !== undefined) {
+        setProgressInfo({
+          current: response.question_index,
+          total: response.total_questions
+        });
+      }
+
+      // Check for signup requirement
+      if (response.require_signup) {
+        setShowSignupPrompt(true);
+      }
+
+      // Check for date picker
+      if (response.show_date_picker) {
+        setShowDatePicker(true);
+      } else {
+        setShowDatePicker(false);
+      }
+
+      setIsTyping(false);
+
+      // Add AI response with buttons if provided
+      const aiResponse: Message = {
+        id: messages.length + 2,
+        text: response.response,
+        isUser: false,
+        buttons: response.buttons?.map(b => ({ label: b.label, value: b.value }))
+      };
+      setMessages(prev => [...prev, aiResponse]);
+
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      setIsTyping(false);
+
+      // Fallback message
+      const fallbackResponse: Message = {
+        id: messages.length + 2,
+        text: "I'm having trouble processing that. Could you try again?",
+        isUser: false
+      };
+      setMessages(prev => [...prev, fallbackResponse]);
+    }
+  };
 
   // Initialize chat on component mount
   useEffect(() => {
     const initializeChat = async () => {
       if (isInitialized) return;
-      
+
       setIsTyping(true);
-      
+
       try {
         const response = await apiClient.homePageChat({
           message: "init",
@@ -241,21 +293,16 @@ const HomePage = () => {
         // Add initial bot message with buttons
         const initialMessage: Message = {
           id: 1,
-          text: "Hi there! I'm ClaimBot. I can help you handle your personal injury claim step-by-step without an attorney. What type of incident are you dealing with?",
+          text: response.response,
           isUser: false,
-          buttons: [
-            { label: "🚗 Auto Accident", value: "Auto Accident" },
-            { label: "🚶 Slip & Fall", value: "Slip & Fall" },
-            { label: "💼 Workplace Injury", value: "Workplace Injury" },
-            { label: "📋 Other", value: "Other" }
-          ]
+          buttons: response.buttons?.map(b => ({ label: b.label, value: b.value }))
         };
         setMessages([initialMessage]);
         setIsInitialized(true);
-        
+
       } catch (error) {
         console.error('Error initializing chat:', error);
-        
+
         // Fallback to default message with buttons if API fails
         const fallbackMessage: Message = {
           id: 1,
@@ -279,6 +326,7 @@ const HomePage = () => {
   }, [isInitialized]);
 
   const handleSkipQuestionnaire = async () => {
+    // Don't add user message for skip action, just send to backend
     setIsTyping(true);
 
     try {
@@ -286,337 +334,57 @@ const HomePage = () => {
         message: "SKIP_QUESTIONS",
         session_id: sessionId || undefined,
         context: {
-          step: conversationStep,
-          claim_type: claimType,
-          accident_date: accidentDate,
-          
-          lead_info: leadInfo,
-          question_index: questionIndex,
-          answers: answers,
-          skip_to_completion: true,
-          conversation_history: messages.map(msg => ({
-            text: msg.text,
-            isUser: msg.isUser
-          }))
+          step: conversationStep
         }
       });
 
-      setIsTyping(false);
-      setIsInQuestionnaire(false);
+      // Update session ID if provided
+      if (response.session_id && !sessionId) {
+        setSessionId(response.session_id);
+      }
 
-      // Add AI response
+      // Update conversation step
+      if (response.next_step !== undefined) {
+        setConversationStep(response.next_step);
+      }
+
+      // Check for signup requirement
+      if (response.require_signup) {
+        setShowSignupPrompt(true);
+      }
+
+      setIsTyping(false);
+
+      // Add AI response only (no user message for skip)
       const aiResponse: Message = {
         id: messages.length + 1,
         text: response.response,
-        isUser: false
+        isUser: false,
+        buttons: response.buttons?.map(b => ({ label: b.label, value: b.value }))
       };
       setMessages(prev => [...prev, aiResponse]);
-
-      // Check if signup is required
-      if ((response as any).require_signup) {
-        setShowSignupPrompt(true);
-      }
 
     } catch (error) {
       console.error('Error skipping questionnaire:', error);
       setIsTyping(false);
-      setIsInQuestionnaire(false);
     }
   };
 
   const handleButtonClick = async (value: string) => {
     // Remove buttons from the last bot message
-    setMessages(prev => prev.map((msg, index) => 
+    setMessages(prev => prev.map((msg, index) =>
       index === prev.length - 1 ? { ...msg, buttons: undefined } : msg
     ));
 
-    // Store claim type when user selects incident type
-    setClaimType(value);
-
-    // Add user message
-    const userMessage: Message = {
-      id: messages.length + 1,
-      text: value,
-      isUser: true
-    };
-    setMessages(prev => [...prev, userMessage]);
-    setIsTyping(true);
-
-    try {
-      // Call the homepage chat API
-      // Don't send has_injuries on step 2 - let AI determine it
-      const contextData: any = {
-        step: conversationStep,
-        claim_type: value,
-        accident_date: accidentDate,
-        lead_info: leadInfo,
-        question_index: questionIndex,
-        answers: answers,
-        conversation_history: messages.map(msg => ({
-          text: msg.text,
-          isUser: msg.isUser
-        }))
-      };
-      
-      // Only include has_injuries/injury_description after step 3 (after injury question is answered)
-      if (conversationStep > 3) {
-        contextData.has_injuries = hasInjuries;
-        contextData.injury_description = injuryDescription;
-      }
-      
-      const response = await apiClient.homePageChat({
-        message: value,
-        session_id: sessionId || undefined,
-        context: contextData
-      });
-
-      // Update session ID if provided
-      if (response.session_id && !sessionId) {
-        setSessionId(response.session_id);
-      }
-
-      // Update conversation step
-      if (response.next_step !== undefined) {
-        setConversationStep(response.next_step);
-      }
-
-      // Update question index if provided
-      if (response.question_index !== undefined) {
-        setQuestionIndex(response.question_index);
-      }
-
-      // Update answers if provided
-      if (response.answers) {
-        setAnswers(response.answers);
-      }
-
-      // Update injury status if provided by AI
-      if (response.has_injuries !== undefined) {
-        setHasInjuries(response.has_injuries);
-      }
-      
-      if (response.injury_description) {
-        setInjuryDescription(response.injury_description);
-      }
-
-      // Check if we're in questionnaire (step 6+)
-      if (response.next_step >= 6) {
-        setIsInQuestionnaire(true);
-      }
-
-      // Check if signup is required
-      if ((response as any).require_signup) {
-        setShowSignupPrompt(true);
-        setIsInQuestionnaire(false);
-      }
-
-      setIsTyping(false);
-
-      // Add AI response
-      const aiResponse: Message = {
-        id: messages.length + 2,
-        text: response.response,
-        isUser: false
-      };
-      setMessages(prev => [...prev, aiResponse]);
-
-    } catch (error) {
-      console.error('Error getting AI response:', error);
-      setIsTyping(false);
-
-      // Fallback message
-      const fallbackResponse: Message = {
-        id: messages.length + 2,
-        text: "Thank you! Let me help you with your claim. Please tell me more about what happened.",
-        isUser: false
-      };
-      setMessages(prev => [...prev, fallbackResponse]);
-    }
+    await sendMessageToBackend(value);
   };
 
   const handleFAQClick = async (question: string) => {
-    // Add user message
-    const userMessage: Message = {
-      id: messages.length + 1,
-      text: question,
-      isUser: true
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setIsTyping(true);
-
-    try {
-      // Call the homepage chat API
-      // Don't send has_injuries on step 2 - let AI determine it
-      const contextData: any = {
-        step: conversationStep,
-        claim_type: claimType,
-        accident_date: accidentDate,
-        lead_info: leadInfo,
-        question_index: questionIndex,
-        answers: answers,
-        conversation_history: messages.map(msg => ({
-          text: msg.text,
-          isUser: msg.isUser
-        }))
-      };
-      
-      // Only include has_injuries/injury_description after step 3 (after injury question is answered)
-      if (conversationStep > 3) {
-        contextData.has_injuries = hasInjuries;
-        contextData.injury_description = injuryDescription;
-      }
-      
-      const response = await apiClient.homePageChat({
-        message: question,
-        session_id: sessionId || undefined,
-        context: contextData
-      });
-
-      // Update session ID if provided
-      if (response.session_id && !sessionId) {
-        setSessionId(response.session_id);
-      }
-
-      // Update conversation step
-      if (response.next_step !== undefined) {
-        setConversationStep(response.next_step);
-      }
-
-      // Update question index if provided
-      if (response.question_index !== undefined) {
-        setQuestionIndex(response.question_index);
-      }
-
-      // Update answers if provided
-      if (response.answers) {
-        setAnswers(response.answers);
-      }
-
-      // Update injury status if provided by AI
-      if (response.has_injuries !== undefined) {
-        setHasInjuries(response.has_injuries);
-      }
-      
-      if (response.injury_description) {
-        setInjuryDescription(response.injury_description);
-      }
-
-      setIsTyping(false);
-
-      // Add AI response
-      const aiResponse: Message = {
-        id: messages.length + 2,
-        text: response.response,
-        isUser: false
-      };
-      setMessages(prev => [...prev, aiResponse]);
-
-    } catch (error) {
-      console.error('Error getting AI response:', error);
-      setIsTyping(false);
-
-      // Fallback message
-      const fallbackResponse: Message = {
-        id: messages.length + 2,
-        text: "Thank you for your question! I'm here to help you with your claim. No attorney needed—I'll guide you step by step.",
-        isUser: false
-      };
-      setMessages(prev => [...prev, fallbackResponse]);
-    }
+    await sendMessageToBackend(question);
   };
 
-  // Quick action handler for yes/no buttons
   const handleQuickAction = async (action: string) => {
-    // Add user message
-    const userMessage: Message = {
-      id: messages.length + 1,
-      text: action,
-      isUser: true
-    };
-    setMessages(prev => [...prev, userMessage]);
-    setIsTyping(true);
-
-    try {
-      const contextData: any = {
-        step: conversationStep,
-        claim_type: claimType,
-        accident_date: accidentDate,
-        lead_info: leadInfo,
-        question_index: questionIndex,
-        answers: answers,
-        conversation_history: messages.map(msg => ({
-          text: msg.text,
-          isUser: msg.isUser
-        }))
-      };
-
-      // Only include has_injuries/injury_description after step 3 (after injury question is answered)
-      if (conversationStep > 3) {
-        contextData.has_injuries = hasInjuries;
-        contextData.injury_description = injuryDescription;
-      }
-
-      const response = await apiClient.homePageChat({
-        message: action,
-        session_id: sessionId || undefined,
-        context: contextData
-      });
-
-      // Update session ID if provided
-      if (response.session_id && !sessionId) {
-        setSessionId(response.session_id);
-      }
-
-      // Update conversation step
-      if (response.next_step !== undefined) {
-        setConversationStep(response.next_step);
-      }
-
-      // Update question index if provided
-      if (response.question_index !== undefined) {
-        setQuestionIndex(response.question_index);
-      }
-
-      // Update answers if provided
-      if (response.answers) {
-        setAnswers(response.answers);
-      }
-
-      // Update injury status if provided by AI
-      if (response.has_injuries !== undefined) {
-        setHasInjuries(response.has_injuries);
-      }
-      
-      if (response.injury_description) {
-        setInjuryDescription(response.injury_description);
-      }
-
-      // Check if we're in questionnaire (step 6+)
-      if (response.next_step >= 6) {
-        setIsInQuestionnaire(true);
-      }
-
-      // Check if signup is required
-      if ((response as any).require_signup) {
-        setShowSignupPrompt(true);
-        setIsInQuestionnaire(false);
-      }
-
-      setIsTyping(false);
-
-      // Add AI response
-      const aiResponse: Message = {
-        id: messages.length + 2,
-        text: response.response,
-        isUser: false
-      };
-      setMessages(prev => [...prev, aiResponse]);
-
-    } catch (error) {
-      console.error('Error with quick action:', error);
-      setIsTyping(false);
-    }
+    await sendMessageToBackend(action);
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -624,112 +392,7 @@ const HomePage = () => {
     if (!inputValue.trim()) return;
 
     const userInput = inputValue.trim();
-    
-    // Detect and store information from user input BEFORE making API call
-    let detectedAccidentDate = accidentDate;
-    let detectedInjuryDescription = injuryDescription;
-    let detectedHasInjuries = hasInjuries;
-    
-    // Step 1: After selecting claim type, user provides date
-    if (conversationStep === 1 && !accidentDate) {
-      detectedAccidentDate = userInput;
-      setAccidentDate(userInput);
-    }
-    
-    // Step 2: Let AI determine if user has injuries based on their response
-    // The backend will interpret the answer and send back has_injuries status
-    
-    const userMessage: Message = {
-      id: messages.length + 1,
-      text: userInput,
-      isUser: true
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setInputValue('');
-    setIsTyping(true);
-
-    try {
-      // Call the homepage chat API with detected values
-      // Don't send has_injuries on step 2 - let AI determine it
-      const contextData: any = {
-        step: conversationStep,
-        claim_type: claimType,
-        accident_date: detectedAccidentDate,
-        lead_info: leadInfo,
-        question_index: questionIndex,
-        answers: answers,
-        conversation_history: messages.map(msg => ({
-          text: msg.text,
-          isUser: msg.isUser
-        }))
-      };
-      
-      // Only include has_injuries/injury_description after step 3 (after injury question is answered)
-      if (conversationStep > 3) {
-        contextData.has_injuries = detectedHasInjuries;
-        contextData.injury_description = detectedInjuryDescription;
-      }
-      
-      const response = await apiClient.homePageChat({
-        message: userInput,
-        session_id: sessionId || undefined,
-        context: contextData
-      });
-
-      // Update session ID if provided
-      if (response.session_id && !sessionId) {
-        setSessionId(response.session_id);
-      }
-
-      // Update conversation step
-      if (response.next_step !== undefined) {
-        setConversationStep(response.next_step);
-      }
-
-      // Update question index if provided
-      if (response.question_index !== undefined) {
-        setQuestionIndex(response.question_index);
-      }
-
-      // Update answers if provided
-      if (response.answers) {
-        setAnswers(response.answers);
-      }
-
-      // Check if we're in questionnaire (step 6+)
-      if (response.next_step >= 6) {
-        setIsInQuestionnaire(true);
-      }
-
-      // Check if signup is required
-      if ((response as any).require_signup) {
-        setShowSignupPrompt(true);
-        setIsInQuestionnaire(false);
-      }
-
-      setIsTyping(false);
-
-      // Add AI response
-      const aiResponse: Message = {
-        id: messages.length + 2,
-        text: response.response,
-        isUser: false
-      };
-      setMessages(prev => [...prev, aiResponse]);
-
-    } catch (error) {
-      console.error('Error getting AI response:', error);
-      setIsTyping(false);
-
-      // Fallback message
-      const fallbackResponse: Message = {
-        id: messages.length + 2,
-        text: "Thank you for sharing that! I'm here to help you maximize your settlement. To get personalized assistance with your claim, please sign up to access our full AI-powered platform.",
-        isUser: false
-      };
-      setMessages(prev => [...prev, fallbackResponse]);
-    }
+    await sendMessageToBackend(userInput);
   };
 
 
@@ -964,19 +627,19 @@ const HomePage = () => {
                             <span className="text-xs text-gray-300 font-medium">Online</span>
                           </div>
                         </div>
-                        
+
                         {/* Progress Bar */}
-                        {conversationStep > 0 && conversationStep <= TOTAL_STEPS && (
+                        {progressInfo && (
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <span className="text-xs text-gray-400 font-medium">
-                                Step {conversationStep} of {TOTAL_STEPS}
+                                Question {progressInfo.current} of {progressInfo.total}
                               </span>
                               <span className="text-xs text-[#8dff2d] font-semibold">
-                                {Math.round((conversationStep / TOTAL_STEPS) * 100)}% Complete
+                                {Math.round((progressInfo.current / progressInfo.total) * 100)}% Complete
                               </span>
                             </div>
-                            <ProgressBar step={conversationStep} totalSteps={TOTAL_STEPS} />
+                            <ProgressBar step={progressInfo.current} totalSteps={progressInfo.total} />
                           </div>
                         )}
                       </div>
@@ -989,25 +652,19 @@ const HomePage = () => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.3 }}
                           >
-                            <ChatBubble 
-                              message={message.text} 
-                              isUser={message.isUser} 
+                            <ChatBubble
+                              message={message.text}
+                              isUser={message.isUser}
                               buttons={message.buttons}
                               onButtonClick={handleButtonClick}
                             />
                           </motion.div>
                         ))}
-                        
-                        {/* Contextual Tips */}
-                        {!isTyping && conversationStep > 0 && conversationStep <= TOTAL_STEPS && getContextualTip(conversationStep) && (
-                          <InlineTip 
-                            tip={getContextualTip(conversationStep)!.tip} 
-                            icon={getContextualTip(conversationStep)!.icon} 
-                          />
-                        )}
-                        
-                        {/* Quick Action Buttons for Injury Question (Step 3) */}
-                        {!isTyping && conversationStep === 3 && messages.length > 0 && messages[messages.length - 1]?.isUser === false && (
+
+                        {/* Contextual Tips - Removed, backend handles all logic */}
+
+                        {/* Quick Action Buttons - Removed, backend provides buttons in response */}
+                        {!isTyping && false && (
                           <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -1031,7 +688,7 @@ const HomePage = () => {
                             </motion.button>
                           </motion.div>
                         )}
-                        
+
                         {isTyping && (
                           <motion.div
                             className="flex items-center gap-2 text-gray-400 ml-2"
@@ -1064,8 +721,8 @@ const HomePage = () => {
                       {/* FAQ Section */}
                       <FAQSection onQuestionClick={handleFAQClick} />
 
-                      {/* Skip Questions Button - Only show during questionnaire */}
-                      {isInQuestionnaire && !showSignupPrompt && (
+                      {/* Skip Questions Button - Show when in questionnaire mode */}
+                      {progressInfo && !showSignupPrompt && (
                         <div className="p-4 border-t border-[#333333]/50 bg-[#0a0a0a]/80 flex justify-center">
                           <motion.button
                             onClick={handleSkipQuestionnaire}
@@ -1093,14 +750,14 @@ const HomePage = () => {
                                 Create Account
                               </motion.button>
                             </Link>
-                           
+
                           </div>
                         </div>
                       ) : (
                         <form onSubmit={handleSendMessage} className="p-6 border-t border-[#333333]/50 bg-[#0a0a0a]/80">
                           <div className="flex gap-3">
-                            {/* Show date picker when asking for accident date (step 2) */}
-                            {conversationStep === 2 && !accidentDate ? (
+                            {/* Show date picker when backend requests it */}
+                            {showDatePicker ? (
                               <input
                                 type="date"
                                 value={inputValue}
@@ -1270,7 +927,7 @@ const HomePage = () => {
                     number: "01",
                     title: "Assessment",
                     description: "AI evaluates your claim value instantly using advanced algorithms",
-                    icon: <img src="/output-onlinepngtools.png" alt="Injured person" className="h-10 w-10"  />
+                    icon: <img src="/output-onlinepngtools.png" alt="Injured person" className="h-10 w-10" />
                   },
                   {
                     number: "02",
@@ -1326,7 +983,7 @@ const HomePage = () => {
 
         {/* Social Proof */}
         <section className="py-24 border-t border-[#222222]">
-          <div className="container mx-auto px-6">  
+          <div className="container mx-auto px-6">
             <motion.div
               className="max-w-5xl mx-auto text-center"
               initial={{ opacity: 0, y: 50 }}
@@ -1455,8 +1112,8 @@ const HomePage = () => {
               </div>
 
               <p className="text-sm text-gray-400 font-normal">
-                {hasActiveSubscription 
-                  ? "You have an active subscription" 
+                {hasActiveSubscription
+                  ? "You have an active subscription"
                   : "No credit card required • 7-day free trial • Cancel anytime"
                 }
               </p>
