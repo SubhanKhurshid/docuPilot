@@ -44,9 +44,9 @@ const ChatBubble = ({
   return (
     <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
       <div
-        className={`max-w-[80%] px-4 py-3 rounded-2xl ${isUser
-            ? 'bg-gradient-to-r from-[#8dff2d] to-[#7be525] text-black font-medium'
-            : 'bg-[#222222] text-gray-200 font-normal'
+        className={`max-w-[80%] px-4 py-3 rounded-2xl whitespace-pre-wrap ${isUser
+          ? 'bg-gradient-to-r from-[#8dff2d] to-[#7be525] text-black font-medium'
+          : 'bg-[#222222] text-gray-200 font-normal'
           }`}
       >
         {message}
